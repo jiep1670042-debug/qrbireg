@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* プレミアム・グラスモルフィズムスタイル */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* アンビエントライト（光の球体）用アニメーション */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.4;
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.15);
+    opacity: 0.6;
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+    opacity: 0.4;
+  }
+}
+
+.animate-float-slow-1 {
+  animation: float-slow 15s infinite ease-in-out;
+}
+
+.animate-float-slow-2 {
+  animation: float-slow 20s infinite ease-in-out;
+  animation-delay: 3s;
+}
+
+/* タップフィードバックアニメーション */
+.btn-tap-active:active {
+  transform: scale(0.96);
+}
+
