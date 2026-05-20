@@ -1,4 +1,5 @@
 import InterestList from '@/components/InterestList';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 // サーバーコンポーネントとしてデータ取得する (キャッシュなし)
@@ -35,9 +36,23 @@ export default async function DashboardPage({ params }: { params: { posterId: st
               </h1>
             </div>
             
-            <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-2xl border border-slate-100 shadow-sm text-center">
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">合計反応数</div>
-              <div className="text-2xl font-black text-blue-600">{totalCount} <span className="text-xs font-semibold text-slate-500">件</span></div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/my-dashboard"
+                className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
+              >
+                ← マイページに戻る
+              </Link>
+              <Link
+                href="/"
+                className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
+              >
+                トップに戻る
+              </Link>
+              <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-2xl border border-slate-100 shadow-sm text-center min-w-[90px]">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">合計反応数</div>
+                <div className="text-2xl font-black text-blue-600">{totalCount} <span className="text-xs font-semibold text-slate-500">件</span></div>
+              </div>
             </div>
           </div>
 
@@ -66,6 +81,22 @@ export default async function DashboardPage({ params }: { params: { posterId: st
         </header>
         
         {interests && <InterestList interests={interests} />}
+
+        {/* 画面下部のナビゲーションボタン */}
+        <div className="flex flex-wrap justify-center gap-4 pt-6 border-t border-slate-100">
+          <Link
+            href="/my-dashboard"
+            className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-2xl border border-slate-200 shadow-md text-sm transition-all duration-300 active:scale-[0.97] flex items-center gap-2"
+          >
+            ← マイページに戻る
+          </Link>
+          <Link
+            href="/"
+            className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-2xl border border-slate-200 shadow-md text-sm transition-all duration-300 active:scale-[0.97] flex items-center gap-2"
+          >
+            トップに戻る
+          </Link>
+        </div>
       </div>
     </main>
   );

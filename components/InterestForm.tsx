@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 interface InterestFormProps {
@@ -89,6 +90,22 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
           <p className="text-slate-500 text-sm font-medium">
             興味・フィードバックを登録しました。<br />発表をお聞きいただき、ありがとうございました。
           </p>
+        </div>
+
+        {/* ナビゲーションボタン */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <Link
+            href="/my-dashboard"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-sm flex items-center justify-center gap-1.5"
+          >
+            📊 マイページに戻る
+          </Link>
+          <Link
+            href="/"
+            className="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-sm text-sm flex items-center justify-center gap-1.5"
+          >
+            🏠 トップに戻る
+          </Link>
         </div>
       </div>
     );
