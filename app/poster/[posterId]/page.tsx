@@ -43,7 +43,7 @@ export default function PosterPage({ params }: { params: { posterId: string } })
           <div className="space-y-2">
             <h1 className="text-2xl font-black text-slate-800">ユーザー登録が必要です</h1>
             <p className="text-slate-500 text-sm leading-relaxed">
-              フィードバックを登録するには、まずご自身の参加証（QRコード）を読み込み、ユーザー登録を完了させてください。
+              フィードバックを登録するには、まずご自身の参加証（QRコード）を読み込み、参加者登録を完了させてください。
             </p>
           </div>
 
