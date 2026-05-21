@@ -71,9 +71,11 @@ export default function Home() {
           <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxe">
             このシステムは、ポスター発表の参加者が興味レベルやコメントを<br />発表者に直接届けるためのものです。
           </p>
-          <p className="text-slate-500 text-sm leading-relaxed font-medium">
-            ポスターのQRコードをスキャンすると、<br />自動で興味・フィードバックの登録画面が開きます。
-          </p>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm">
+            <p className="text-indigo-950 text-sm leading-relaxed font-extrabold">
+              📱 ポスターのQRコードをスキャンすると、<br />自動で興味・フィードバックの登録画面が開きます。
+            </p>
+          </div>
         </div>
 
         {isLoading ? (
