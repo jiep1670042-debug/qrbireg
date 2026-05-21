@@ -198,11 +198,16 @@ export default function MyDashboard() {
                 マイページ
               </h1>
               {participant && (
-                <p className="text-slate-600 text-sm font-bold flex items-center gap-1.5 pt-0.5">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/30"></span>
-                  {participant.last_name} {participant.first_name} 様
-                  {participant.company && <span className="text-slate-400 font-medium text-xs">({participant.company} {participant.affiliation})</span>}
-                </p>
+                <div className="text-slate-600 text-sm font-bold flex flex-col items-start gap-1 pt-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/30"></span>
+                    <span>{participant.last_name} {participant.first_name} 様</span>
+                    {participant.company && <span className="text-slate-400 font-medium text-xs">({participant.company} {participant.affiliation})</span>}
+                  </div>
+                  <div className="text-slate-400 font-mono text-xs font-bold pl-4">
+                    申込番号: {participant.id}
+                  </div>
+                </div>
               )}
             </div>
 

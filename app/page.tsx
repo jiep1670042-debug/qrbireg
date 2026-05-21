@@ -86,6 +86,7 @@ export default function Home() {
           <div className="space-y-6 animate-fade-in">
             <div className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 border border-emerald-100/80 rounded-2xl p-5 shadow-inner">
               <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">現在のログイン参加者</p>
+              <p className="text-slate-400 text-xs font-mono font-bold mb-1">申込番号: {participant.id}</p>
               <p className="text-slate-800 font-extrabold text-lg">
                 {participant.last_name} {participant.first_name} 様
               </p>
@@ -99,7 +100,7 @@ export default function Home() {
                 href="/my-dashboard"
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-md tracking-wider flex items-center justify-center gap-2"
               >
-                マイページ（登録一覧）を開く 📊
+                マイページを開く 📊
               </Link>
               {/*
               <div className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
@@ -115,9 +116,9 @@ export default function Home() {
                 </Link>
                 <button
                   onClick={handleClearRegistration}
-                  className="text-rose-400 hover:text-rose-600 text-xs font-bold hover:underline"
+                  className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline"
                 >
-                  登録を解除（初期化）する ⚠️
+                  参加者登録を解除する ⚠️
                 </button>
               </div>
             </div>
@@ -127,7 +128,7 @@ export default function Home() {
           <div className="space-y-6 animate-fade-in">
             <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/80 rounded-2xl p-6 shadow-inner">
               <p className="text-slate-800 font-bold leading-relaxed text-sm">
-                フィードバックを登録するには、まずはじめにご自身の参加証の登録を行ってください。
+                フィードバックを登録するには、まずはじめにご自身の参加者登録を行ってください。
               </p>
             </div>
 
@@ -135,7 +136,7 @@ export default function Home() {
               href="/register"
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-md tracking-wider flex items-center justify-center gap-2"
             >
-              参加証登録を開始する 🚀
+              参加者登録を開始する 🚀
             </Link>
           </div>
         )}
