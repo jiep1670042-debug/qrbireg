@@ -1,6 +1,7 @@
 import InterestList from '@/components/InterestList';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import CSVDownloadButton from '@/components/CSVDownloadButton';
 
 // サーバーコンポーネントとしてデータ取得する (キャッシュなし)
 export const revalidate = 0;
@@ -37,6 +38,7 @@ export default async function DashboardPage({ params }: { params: { posterId: st
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
+              <CSVDownloadButton interests={interests || []} posterId={posterId} />
               <Link
                 href="/my-dashboard"
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
