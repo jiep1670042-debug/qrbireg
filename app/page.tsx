@@ -16,6 +16,14 @@ export default function Home() {
   const [participant, setParticipant] = useState<ParticipantInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const handleClearRegistration = () => {
+    if (window.confirm('登録データを削除して、未登録状態に戻しますか？')) {
+      localStorage.removeItem('userId');
+      setUserId(null);
+      setParticipant(null);
+    }
+  };
+
   useEffect(() => {
     const savedUserId = localStorage.getItem('userId');
     if (!savedUserId) {
@@ -98,12 +106,20 @@ export default function Home() {
                 ポスターのQRコードをスキャンすると、<br />自動で興味・フィードバックの登録画面が開きます。
               </div>
               */}
-              <Link
-                href="/register"
-                className="inline-block text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline pt-4"
-              >
-                別の申込番号で登録し直す 🔄
-              </Link>
+              <div className="flex flex-col items-center gap-3 pt-4">
+                <Link
+                  href="/register"
+                  className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline"
+                >
+                  別の申込番号で登録し直す 🔄
+                </Link>
+                <button
+                  onClick={handleClearRegistration}
+                  className="text-rose-400 hover:text-rose-600 text-xs font-bold hover:underline"
+                >
+                  登録を解除（初期化）する ⚠️
+                </button>
+              </div>
             </div>
           </div>
         ) : (
