@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +16,42 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [existingId, setExistingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadExistingInterest() {
+      try {
+        const { data, error } = await supabase
+          .from('interests')
+          .select('id, interest_level, comment, contact_allowed')
+          .eq('participant_id', userId)
+          .eq('poster_id', posterId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const item = data[0];
+          setExistingId(item.id);
+          setLevel(item.interest_level);
+          setComment(item.comment || '');
+          setContactAllowed(item.contact_allowed);
+        }
+      } catch (err: any) {
+        console.error('Failed to load existing interest:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (userId && posterId) {
+      loadExistingInterest();
+    } else {
+      setIsLoading(false);
+    }
+  }, [userId, posterId]);
 
   const levels = [
     {
@@ -54,19 +90,32 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
     setErrorMsg('');
 
     try {
-      const { error } = await supabase
-        .from('interests')
-        .insert([
-          {
-            participant_id: userId,
-            poster_id: posterId,
+      if (existingId) {
+        const { error } = await supabase
+          .from('interests')
+          .update({
             interest_level: level,
             comment,
             contact_allowed: contactAllowed,
-          }
-        ]);
+          })
+          .eq('id', existingId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('interests')
+          .insert([
+            {
+              participant_id: userId,
+              poster_id: posterId,
+              interest_level: level,
+              comment,
+              contact_allowed: contactAllowed,
+            }
+          ]);
+
+        if (error) throw error;
+      }
 
       setIsSuccess(true);
     } catch (error: any) {
@@ -77,6 +126,18 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="glass-panel shadow-2xl rounded-3xl p-6 md:p-8 space-y-7 border border-white/70 flex flex-col items-center justify-center min-h-[300px]">
+        <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p className="text-slate-500 font-bold tracking-wider text-xs animate-pulse">登録情報の確認中...</p>
+      </div>
+    );
+  }
+
   if (isSuccess) {
     return (
       <div className="glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
@@ -86,9 +147,9 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
           </svg>
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-black text-slate-800">送信が完了しました！</h2>
+          <h2 className="text-2xl font-black text-slate-800">{existingId ? '更新が完了しました！' : '送信が完了しました！'}</h2>
           <p className="text-slate-500 text-sm font-medium">
-            興味・フィードバックを登録しました。<br />発表をお聞きいただき、ありがとうございました。
+            {existingId ? '興味・フィードバックを更新しました。' : '興味・フィードバックを登録しました。'}<br />発表をお聞きいただき、ありがとうございました。
           </p>
         </div>
 
@@ -113,6 +174,12 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
 
   return (
     <div className="glass-panel shadow-2xl rounded-3xl p-6 md:p-8 space-y-7 border border-white/70">
+      {existingId && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold border border-blue-100/80 w-fit">
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+          登録済みのフィードバックを編集しています
+        </div>
+      )}
       {errorMsg && (
         <div className="p-4 bg-rose-50/80 text-rose-800 rounded-2xl text-sm font-medium border border-rose-100/80 shadow-sm animate-shake">
           {errorMsg}
@@ -215,10 +282,10 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            送信中...
+            {existingId ? '更新中...' : '送信中...'}
           </>
         ) : (
-          '送信する'
+          existingId ? '更新する' : '送信する'
         )}
       </button>
     </div>
