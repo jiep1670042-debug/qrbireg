@@ -73,11 +73,7 @@ export default function QRScanner({ onScanSuccess, onScanFailure }: QRScannerPro
           background-color: #e2e8f0;
         }
         #qr-reader select {
-          padding: 8px;
-          border-radius: 8px;
-          border: 1px solid #cbd5e1;
-          margin-bottom: 8px;
-          max-width: 100%;
+          display: none !important;
         }
         #qr-reader a {
           display: none;
