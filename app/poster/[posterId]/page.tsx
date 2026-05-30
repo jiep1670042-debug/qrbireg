@@ -61,13 +61,21 @@ export default function PosterPage({ params }: { params: { posterId: string } })
   return (
     <main className="flex min-h-screen flex-col p-6 max-w-md mx-auto w-full justify-center">
       <div className="mb-6 mt-4 text-center space-y-2">
-        <div className="flex justify-between items-center w-full pb-2">
-          <Link
-            href="/my-dashboard"
-            className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 bg-blue-50/50 hover:bg-blue-100/50 px-3.5 py-2 rounded-xl border border-blue-100/40"
-          >
-            📊 マイページ
-          </Link>
+        <div className="flex justify-between items-center w-full pb-2 gap-2">
+          <div className="flex gap-2">
+            <Link
+              href="/"
+              className="text-xs font-bold text-slate-600 hover:text-slate-800 transition-colors flex items-center gap-1 bg-slate-100/80 hover:bg-slate-200/80 px-3 py-2 rounded-xl border border-slate-200/50"
+            >
+              ← トップ
+            </Link>
+            <Link
+              href="/my-dashboard"
+              className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 bg-blue-50/50 hover:bg-blue-100/50 px-3 py-2 rounded-xl border border-blue-100/40"
+            >
+              📊 マイページ
+            </Link>
+          </div>
           <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-black tracking-widest px-3.5 py-2 rounded-full shadow-sm shadow-blue-500/10 uppercase">
             Poster Session
           </span>
