@@ -181,7 +181,7 @@ function RegisterContent() {
                     onClick={() => setIsScanning(true)}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                   >
-                    <span>📷</span> カメラを起動してQRを読む
+                    <span>📷</span> カメラを起動して参加証のQRコードを読み取る
                   </button>
                   <p className="text-xs text-slate-500 mt-3 font-medium">
                     ボタンを押すとカメラの使用許可が求められます。

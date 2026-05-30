@@ -92,13 +92,13 @@ export default function Home() {
             <p className="text-indigo-950 text-sm leading-relaxed font-extrabold">
               📱 ポスターのQRコードをスキャンすると、<br />自動で興味・フィードバックの登録画面が開きます。
             </p>
-            
+
             {!isScanning ? (
               <button
                 onClick={() => setIsScanning(true)}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
               >
-                <span>📷</span> カメラを起動してポスターのQRを読む
+                <span>📷</span> カメラを起動してポスターのQRコードを読み取る
               </button>
             ) : (
               <div className="space-y-3">

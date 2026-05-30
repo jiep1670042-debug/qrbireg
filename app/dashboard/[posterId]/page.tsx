@@ -49,7 +49,7 @@ export default async function DashboardPage({ params }: { params: { posterId: st
                 href="/"
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
               >
-                トップに戻る
+                ← トップに戻る
               </Link>
               <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-2xl border border-slate-100 shadow-sm text-center min-w-[90px]">
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">合計反応数</div>
@@ -96,7 +96,7 @@ export default async function DashboardPage({ params }: { params: { posterId: st
             href="/"
             className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-2xl border border-slate-200 shadow-md text-sm transition-all duration-300 active:scale-[0.97] flex items-center gap-2"
           >
-            トップに戻る
+            ← トップに戻る
           </Link>
         </div>
       </div>
