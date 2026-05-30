@@ -141,9 +141,9 @@ export default function Home() {
             <div className="space-y-3">
               <Link
                 href="/my-dashboard"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-md tracking-wider flex items-center justify-center gap-2"
+                className="w-full bg-blue-50/60 hover:bg-blue-100/60 text-blue-600 hover:text-blue-700 border border-blue-100/50 font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-sm text-sm flex items-center justify-center gap-2"
               >
-                マイページを開く 📊
+                📊 マイページ
               </Link>
               {/*
               <div className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
