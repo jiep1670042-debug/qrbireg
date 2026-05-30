@@ -18,6 +18,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
   const [errorMsg, setErrorMsg] = useState('');
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isForeignKeyError, setIsForeignKeyError] = useState(false);
 
   useEffect(() => {
     async function loadExistingInterest() {
@@ -121,7 +122,13 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
       setIsSuccess(true);
     } catch (error: any) {
       console.error('Error submitting interest:', error);
-      setErrorMsg(error.message || '送信に失敗しました。時間をおいて再試行してください。');
+      const msg = error.message || '送信に失敗しました。時間をおいて再試行してください。';
+      setErrorMsg(msg);
+      
+      // 外部キー制約エラー（未登録ポスターの読み込み）を検出
+      if (msg.toLowerCase().includes('violates foreign key constraint') || msg.toLowerCase().includes('fk_interests_poster')) {
+        setIsForeignKeyError(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -167,6 +174,39 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
             className="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-sm text-sm flex items-center justify-center gap-1.5"
           >
             🏠 トップに戻る
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isForeignKeyError) {
+    return (
+      <div className="glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
+        <div className="w-20 h-20 bg-rose-50 text-rose-500 border border-rose-100 rounded-full flex items-center justify-center mx-auto shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        
+        <div className="space-y-4">
+          <h2 className="text-xl font-black text-slate-800">エラーが発生しました</h2>
+          
+          <div className="p-4 bg-rose-50/50 text-rose-700 rounded-xl text-xs font-mono text-left border border-rose-100 overflow-x-auto max-w-full">
+            {errorMsg}
+          </div>
+          
+          <p className="text-slate-600 text-sm font-semibold">
+            登録されていないポスターのQRを読み込みました。
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <Link
+            href="/"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/20 text-sm flex items-center justify-center gap-1.5"
+          >
+            🏠 トップページに戻る
           </Link>
         </div>
       </div>
