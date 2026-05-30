@@ -83,6 +83,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
   const handleSubmit = async () => {
     if (!level) {
       setErrorMsg('興味レベルを選択してください');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -173,7 +174,13 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
   }
 
   return (
-    <div className="glass-panel shadow-2xl rounded-3xl p-6 md:p-8 space-y-7 border border-white/70">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
+      className="glass-panel shadow-2xl rounded-3xl p-6 md:p-8 space-y-7 border border-white/70"
+    >
       {existingId && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold border border-blue-100/80 w-fit">
           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
@@ -245,7 +252,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
           </p>
         </div>
 
-        <label htmlFor="contact" className="flex items-center cursor-pointer p-3 bg-white border border-slate-200/80 rounded-xl shadow-sm hover:bg-slate-50/50 transition-colors w-full sm:w-fit pr-5">
+        <label htmlFor="contact" className="flex items-center cursor-pointer p-3 bg-white border border-slate-200/80 rounded-xl shadow-sm hover:bg-slate-50/50 transition-colors w-fit pr-5">
           <div className="relative flex items-center">
             <input
               id="contact"
@@ -271,8 +278,14 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
         </label>
       </div>
 
+      {errorMsg && (
+        <div className="p-4 bg-rose-50/80 text-rose-800 rounded-2xl text-sm font-medium border border-rose-100/80 shadow-sm animate-shake">
+          {errorMsg}
+        </div>
+      )}
+
       <button
-        onClick={handleSubmit}
+        type="submit"
         disabled={isSubmitting}
         className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:opacity-40 shadow-lg shadow-blue-500/20 text-md tracking-wider flex items-center justify-center gap-2"
       >
@@ -288,6 +301,6 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
           existingId ? '更新する' : '送信する'
         )}
       </button>
-    </div>
+    </form>
   );
 }
