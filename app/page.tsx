@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import QRScanner from '@/components/QRScanner';
 
 interface ParticipantInfo {
   id: string;
@@ -12,9 +14,24 @@ interface ParticipantInfo {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [participant, setParticipant] = useState<ParticipantInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handlePosterScanSuccess = (decodedText: string) => {
+    setIsScanning(false);
+    const match = decodedText.match(/\/poster\/(\d+)/);
+    if (match) {
+      const posterId = match[1];
+      router.push(`/poster/${posterId}`);
+    } else if (/^\d+$/.test(decodedText.trim())) {
+      router.push(`/poster/${decodedText.trim()}`);
+    } else {
+      alert("読み取った内容が無効なポスターQRコードです: " + decodedText);
+    }
+  };
 
   const handleClearRegistration = () => {
     if (window.confirm('登録データを削除して、未登録状態に戻しますか？')) {
@@ -71,10 +88,34 @@ export default function Home() {
           <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxe">
             このシステムは、ポスター発表の参加者が興味レベルやコメントを<br />発表者に直接届けるためのものです。
           </p>
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm space-y-4">
             <p className="text-indigo-950 text-sm leading-relaxed font-extrabold">
               📱 ポスターのQRコードをスキャンすると、<br />自動で興味・フィードバックの登録画面が開きます。
             </p>
+            
+            {!isScanning ? (
+              <button
+                onClick={() => setIsScanning(true)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
+              >
+                <span>📷</span> カメラを起動してポスターのQRを読む
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setIsScanning(false)}
+                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.95] w-full"
+                >
+                  キャンセル
+                </button>
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <QRScanner
+                    onScanSuccess={handlePosterScanSuccess}
+                    onScanFailure={() => { }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
