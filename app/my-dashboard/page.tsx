@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import MyFeedbackCSVButton from '@/components/MyFeedbackCSVButton';
 
 interface Presenter {
   last_name: string;
@@ -211,7 +212,13 @@ export default function MyDashboard() {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {participant && (
+                <MyFeedbackCSVButton
+                  interests={interests}
+                  participantName={`${participant.last_name}_${participant.first_name}`}
+                />
+              )}
               <Link
                 href="/"
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
