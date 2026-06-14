@@ -11,7 +11,7 @@ export function useEventId() {
 
   // 1. Extract from the first segment of the pathname (e.g., /sws2026 -> sws2026)
   const segments = pathname.split('/').filter(Boolean);
-  const reservedPaths = ['register', 'my-dashboard', 'poster', 'dashboard'];
+  const reservedPaths = ['register', 'my-dashboard', 'poster', 'dashboard', 'admin'];
 
   if (segments.length > 0) {
     const firstSegment = segments[0];

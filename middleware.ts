@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   const segments = pathname.split('/').filter(Boolean);
 
   // アプリケーション固有の予約済みシステムパス
-  const reservedPaths = ['register', 'my-dashboard', 'poster', 'dashboard'];
+  const reservedPaths = ['register', 'my-dashboard', 'poster', 'dashboard', 'admin'];
 
   // ルートパス「/」、または最初のセグメントがシステム予約パスである場合はリライトせずそのまま進む（無限リライトループ防止）
   if (segments.length === 0 || reservedPaths.includes(segments[0])) {
