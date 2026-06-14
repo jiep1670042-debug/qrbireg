@@ -6,13 +6,21 @@ import CSVDownloadButton from '@/components/CSVDownloadButton';
 // サーバーコンポーネントとしてデータ取得する (キャッシュなし)
 export const revalidate = 0;
 
-export default async function DashboardPage({ params }: { params: { posterId: string } }) {
+export default async function DashboardPage({
+  params,
+  searchParams,
+}: {
+  params: { posterId: string };
+  searchParams: { eventId?: string };
+}) {
   const posterId = parseInt(params.posterId, 10);
+  const eventId = searchParams.eventId || 'default';
   
   // データをSupabaseから取得
   const { data: interests, error } = await supabase
     .from('interests')
     .select('*, participants(*)')
+    .eq('event_id', eventId)
     .eq('poster_id', posterId)
     .order('interest_level', { ascending: false })
     .order('created_at', { ascending: false });
@@ -40,13 +48,13 @@ export default async function DashboardPage({ params }: { params: { posterId: st
             <div className="flex flex-wrap items-center gap-3">
               <CSVDownloadButton interests={interests || []} posterId={posterId} />
               <Link
-                href="/my-dashboard"
+                href={`/${eventId}/my-dashboard`}
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
               >
                 ← マイページに戻る
               </Link>
               <Link
-                href="/"
+                href={`/${eventId}`}
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
               >
                 ← トップに戻る
@@ -87,13 +95,13 @@ export default async function DashboardPage({ params }: { params: { posterId: st
         {/* 画面下部のナビゲーションボタン */}
         <div className="flex flex-wrap justify-center gap-4 pt-6 border-t border-slate-100">
           <Link
-            href="/my-dashboard"
+            href={`/${eventId}/my-dashboard`}
             className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-2xl border border-slate-200 shadow-md text-sm transition-all duration-300 active:scale-[0.97] flex items-center gap-2"
           >
             ← マイページに戻る
           </Link>
           <Link
-            href="/"
+            href={`/${eventId}`}
             className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-2xl border border-slate-200 shadow-md text-sm transition-all duration-300 active:scale-[0.97] flex items-center gap-2"
           >
             ← トップに戻る

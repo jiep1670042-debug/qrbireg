@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEventId } from '@/lib/useEventId';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import MyFeedbackCSVButton from '@/components/MyFeedbackCSVButton';
@@ -37,8 +38,10 @@ interface ParticipantInfo {
   affiliation?: string;
 }
 
-export default function MyDashboard() {
+export function MyDashboardContent() {
   const router = useRouter();
+  const eventId = useEventId();
+
   const [userId, setUserId] = useState<string | null>(null);
   const [participant, setParticipant] = useState<ParticipantInfo | null>(null);
   const [interests, setInterests] = useState<Interest[]>([]);
@@ -48,7 +51,7 @@ export default function MyDashboard() {
 
   useEffect(() => {
     // 1. Fetch userId from localStorage
-    const savedUserId = localStorage.getItem('userId');
+    const savedUserId = localStorage.getItem(`userId_${eventId}`);
     if (!savedUserId) {
       setIsLoading(false);
       return;
@@ -62,6 +65,7 @@ export default function MyDashboard() {
         const { data: partData, error: partError } = await supabase
           .from('participants')
           .select('*')
+          .eq('event_id', eventId)
           .eq('id', savedUserId)
           .single();
 
@@ -72,6 +76,7 @@ export default function MyDashboard() {
         const { data: presPostersData, error: presPostersError } = await supabase
           .from('posters')
           .select('id, title')
+          .eq('event_id', eventId)
           .eq('presenter_id', savedUserId);
 
         if (!presPostersError && presPostersData) {
@@ -99,6 +104,7 @@ export default function MyDashboard() {
               )
             )
           `)
+          .eq('event_id', eventId)
           .eq('participant_id', savedUserId)
           .order('created_at', { ascending: false });
 
@@ -113,7 +119,7 @@ export default function MyDashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [eventId]);
 
   const getLevelBadge = (level: number) => {
     switch (level) {
@@ -168,7 +174,7 @@ export default function MyDashboard() {
             </p>
           </div>
           <button
-            onClick={() => router.push('/register?redirect=/my-dashboard')}
+            onClick={() => router.push(`/${eventId}/register?redirect=/${eventId}/my-dashboard`)}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/20 text-md tracking-wider"
           >
             参加者登録に進む
@@ -220,7 +226,7 @@ export default function MyDashboard() {
                 />
               )}
               <Link
-                href="/"
+                href={`/${eventId}`}
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
               >
                 ← トップに戻る
@@ -276,7 +282,7 @@ export default function MyDashboard() {
               {presentedPosters.map((poster) => (
                 <Link
                   key={poster.id}
-                  href={`/dashboard/${poster.id}`}
+                  href={`/${eventId}/dashboard/${poster.id}`}
                   className="flex items-center justify-between bg-white/80 hover:bg-white border border-indigo-100 hover:border-indigo-200 p-4 rounded-2xl shadow-sm transition-all duration-300 active:scale-[0.98] group"
                 >
                   <div className="space-y-0.5">
@@ -303,7 +309,7 @@ export default function MyDashboard() {
             <div className="glass-panel p-8 text-center rounded-3xl border border-white/70 shadow-xl shadow-blue-900/5 space-y-5">
               <p className="text-slate-500 text-sm font-semibold">まだフィードバックを登録したポスターがありません。</p>
               <Link
-                href="/"
+                href={`/${eventId}`}
                 className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm"
               >
                 ポスターをスキャンしに行く
@@ -383,7 +389,7 @@ export default function MyDashboard() {
                       </div>
 
                       <Link
-                        href={`/poster/${poster?.id || item.poster?.id}`}
+                        href={`/${eventId}/poster/${poster?.id || item.poster?.id}`}
                         className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100/60 hover:to-indigo-100/60 text-blue-700 border border-blue-100/50 font-bold py-2 px-4 rounded-xl text-xs transition-all duration-300 active:scale-[0.96] flex items-center gap-1"
                       >
                         フィードバックを編集 ✏️
@@ -399,5 +405,20 @@ export default function MyDashboard() {
 
       </div>
     </main>
+  );
+}
+
+export default function MyDashboard() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
+          <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-500 font-semibold text-sm">データを読み込み中...</p>
+        </div>
+      </main>
+    }>
+      <MyDashboardContent />
+    </Suspense>
   );
 }

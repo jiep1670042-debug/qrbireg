@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEventId } from '@/lib/useEventId';
 import { supabase } from '@/lib/supabase';
 import QRScanner from '@/components/QRScanner';
 
@@ -15,8 +16,12 @@ interface ParticipantInfo {
 
 export default function Home() {
   const router = useRouter();
+  const eventId = useEventId();
+
   const [userId, setUserId] = useState<string | null>(null);
   const [participant, setParticipant] = useState<ParticipantInfo | null>(null);
+  const [eventName, setEventName] = useState<string | null>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
 
@@ -25,9 +30,9 @@ export default function Home() {
     const match = decodedText.match(/\/poster\/(\d+)/);
     if (match) {
       const posterId = match[1];
-      router.push(`/poster/${posterId}`);
+      router.push(`/${eventId}/poster/${posterId}`);
     } else if (/^\d+$/.test(decodedText.trim())) {
-      router.push(`/poster/${decodedText.trim()}`);
+      router.push(`/${eventId}/poster/${decodedText.trim()}`);
     } else {
       alert("読み取った内容が無効なポスターQRコードです: " + decodedText);
     }
@@ -35,16 +40,45 @@ export default function Home() {
 
   const handleClearRegistration = () => {
     if (window.confirm('登録データを削除して、未登録状態に戻しますか？')) {
-      localStorage.removeItem('userId');
+      localStorage.removeItem(`userId_${eventId}`);
       setUserId(null);
       setParticipant(null);
     }
   };
 
   useEffect(() => {
-    const savedUserId = localStorage.getItem('userId');
+    const fetchEvent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('name')
+          .eq('id', eventId)
+          .single();
+        if (error) {
+          setDbError(`${error.message} (Code: ${error.code})`);
+          setEventName(null);
+        } else if (data) {
+          setEventName(data.name);
+          setDbError(null);
+        } else {
+          setEventName(null);
+          setDbError('No data returned from events table');
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch event:', err);
+        setDbError(err.message || 'Unknown fetch error');
+        setEventName(null);
+      }
+    };
+    fetchEvent();
+  }, [eventId]);
+
+  useEffect(() => {
+    const savedUserId = localStorage.getItem(`userId_${eventId}`);
     if (!savedUserId) {
       setIsLoading(false);
+      setUserId(null);
+      setParticipant(null);
       return;
     }
     setUserId(savedUserId);
@@ -54,11 +88,17 @@ export default function Home() {
         const { data, error } = await supabase
           .from('participants')
           .select('*')
+          .eq('event_id', eventId)
           .eq('id', savedUserId)
           .single();
 
         if (!error && data) {
           setParticipant(data);
+        } else {
+          // 該当イベントにユーザーがいない場合は登録解除状態にする
+          setUserId(null);
+          setParticipant(null);
+          localStorage.removeItem(`userId_${eventId}`);
         }
       } catch (err) {
         console.error('Failed to fetch participant info on home:', err);
@@ -68,7 +108,7 @@ export default function Home() {
     };
 
     fetchParticipant();
-  }, []);
+  }, [eventId]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
@@ -85,7 +125,18 @@ export default function Home() {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             ポスター発表 興味登録
           </h1>
-          <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxe">
+          {eventName ? (
+            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-50/80 text-blue-700 border border-blue-100/50 rounded-full text-xs font-bold shadow-sm mx-auto mt-1">
+              🏆 {eventName}
+            </div>
+          ) : (
+            eventId !== 'default' && (
+              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-50/85 text-slate-500 border border-slate-100 rounded-full text-xs font-semibold shadow-sm mx-auto mt-1">
+                Event: {eventId}
+              </div>
+            )
+          )}
+          <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
             このシステムは、ポスター発表の参加者が興味レベルやコメントを<br />発表者に直接届けるためのものです。
           </p>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm space-y-4">
@@ -140,7 +191,7 @@ export default function Home() {
 
             <div className="space-y-3">
               <Link
-                href="/my-dashboard"
+                href={`/${eventId}/my-dashboard`}
                 className="w-full bg-blue-50/60 hover:bg-blue-100/60 text-blue-600 hover:text-blue-700 border border-blue-100/50 font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-sm text-sm flex items-center justify-center gap-2"
               >
                 📊 マイページ
@@ -152,7 +203,7 @@ export default function Home() {
               */}
               <div className="flex flex-col items-center gap-3 pt-4">
                 <Link
-                  href="/register"
+                  href={`/${eventId}/register`}
                   className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline"
                 >
                   別の申込番号で登録し直す 🔄
@@ -176,7 +227,7 @@ export default function Home() {
             </div>
 
             <Link
-              href="/register"
+              href={`/${eventId}/register`}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-md tracking-wider flex items-center justify-center gap-2"
             >
               参加者登録を開始する 🚀

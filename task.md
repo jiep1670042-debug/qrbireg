@@ -1,12 +1,13 @@
-# 参加者用ダッシュボード（マイページ）実装タスク
+# タスクリスト: ミドルウェアによるマルチイベント対応の実装
 
-- `[x]` データベース構築・データ投入
-  - `[x]` `posters` テーブルの作成と `interests` テーブルへの外部キー制約の追加 (SQL)
-  - `[x]` サンプルデータ自動シーディングスクリプト (`scripts/seed.js`) の作成と実行
-- `[x]` 参加者用ダッシュボード画面の作成
-  - `[x]` `app/my-dashboard/page.tsx` の新規作成（グラスモルフィズムUI、未登録判定、データJOIN取得と一覧表示）
-- `[x]` ナビゲーションの動線改善
-  - `[x]` トップページ (`app/page.tsx`) に「マイページ」ボタンを追加
-  - `[x]` ポスター詳細ページ (`app/poster/[posterId]/page.tsx`) に「マイページ」ヘッダーリンクを追加
-- `[x]` 動作確認・動作検証
-  - `[x]` ブラウザテストによる動作確認（未登録時の動線、登録後の表示、フィードバック一覧の整合性）
+- `[x]` ミドルウェアの導入と基礎設計
+  - `[x]` middleware.ts の新規作成
+- `[x]` 各ページのコード改修（イベントID対応）
+  - `[x]` app/page.tsx (トップページ)
+  - `[x]` app/register/page.tsx (参加者登録)
+  - `[x]` app/my-dashboard/page.tsx (マイページ)
+  - `[x]` app/poster/[posterId]/page.tsx (ポスター入力親ページ)
+  - `[x]` components/InterestForm.tsx (フィードバックフォーム)
+  - `[x]` app/dashboard/[posterId]/page.tsx (発表者ダッシュボード)
+- `[x]` 動作確認とビルド検証
+  - `[x]` 新規イベントID（例: event-test/sws2026）が正しく認識され、データが分離されるか検証

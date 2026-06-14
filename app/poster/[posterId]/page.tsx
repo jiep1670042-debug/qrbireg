@@ -1,19 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEventId } from '@/lib/useEventId';
 import Link from 'next/link';
 import InterestForm from '@/components/InterestForm';
 import { supabase } from '@/lib/supabase';
 
-export default function PosterPage({ params }: { params: { posterId: string } }) {
+export function PosterPageContent({ params }: { params: { posterId: string } }) {
   const router = useRouter();
+  const eventId = useEventId();
+
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [posterTitle, setPosterTitle] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem('userId');
+    const storedUserId = localStorage.getItem(`userId_${eventId}`);
     setUserId(storedUserId);
 
     async function loadPosterInfo() {
@@ -21,6 +24,7 @@ export default function PosterPage({ params }: { params: { posterId: string } })
         const { data, error } = await supabase
           .from('posters')
           .select('title')
+          .eq('event_id', eventId)
           .eq('id', parseInt(params.posterId, 10))
           .single();
 
@@ -35,7 +39,7 @@ export default function PosterPage({ params }: { params: { posterId: string } })
     }
 
     loadPosterInfo();
-  }, [params.posterId]);
+  }, [params.posterId, eventId]);
 
   if (!isLoaded) {
     return (
@@ -69,7 +73,7 @@ export default function PosterPage({ params }: { params: { posterId: string } })
           </div>
 
           <button
-            onClick={() => router.push(`/register?redirect=/poster/${params.posterId}`)}
+            onClick={() => router.push(`/${eventId}/register?redirect=/${eventId}/poster/${params.posterId}`)}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/20 text-md"
           >
             登録画面へ進む
@@ -85,13 +89,13 @@ export default function PosterPage({ params }: { params: { posterId: string } })
         <div className="flex justify-between items-center w-full pb-2 gap-2">
           <div className="flex gap-2">
             <Link
-              href="/"
+              href={`/${eventId}`}
               className="text-xs font-bold text-slate-700 hover:text-slate-800 transition-colors flex items-center gap-1 bg-white hover:bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shadow-sm transition-all duration-300 active:scale-[0.97]"
             >
               ← トップに戻る
             </Link>
             <Link
-              href="/my-dashboard"
+              href={`/${eventId}/my-dashboard`}
               className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 bg-blue-50/50 hover:bg-blue-100/50 px-3 py-2 rounded-xl border border-blue-100/40"
             >
               📊 マイページ
@@ -118,7 +122,25 @@ export default function PosterPage({ params }: { params: { posterId: string } })
         </div>
       </div>
 
-      <InterestForm posterId={parseInt(params.posterId, 10)} userId={userId} />
+      <InterestForm posterId={parseInt(params.posterId, 10)} userId={userId} eventId={eventId} />
     </main>
+  );
+}
+
+export default function PosterPage({ params }: { params: { posterId: string } }) {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen flex-col items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+          <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-slate-500 font-bold tracking-wider text-sm animate-pulse">読み込み中...</p>
+        </div>
+      </main>
+    }>
+      <PosterPageContent params={params} />
+    </Suspense>
   );
 }

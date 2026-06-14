@@ -7,9 +7,10 @@ import { supabase } from '@/lib/supabase';
 interface InterestFormProps {
   posterId: number;
   userId: string;
+  eventId: string;
 }
 
-export default function InterestForm({ posterId, userId }: InterestFormProps) {
+export default function InterestForm({ posterId, userId, eventId }: InterestFormProps) {
   const [level, setLevel] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [contactAllowed, setContactAllowed] = useState(true);
@@ -26,6 +27,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
         const { data, error } = await supabase
           .from('interests')
           .select('id, interest_level, comment, contact_allowed')
+          .eq('event_id', eventId)
           .eq('participant_id', userId)
           .eq('poster_id', posterId)
           .order('created_at', { ascending: false })
@@ -52,7 +54,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
     } else {
       setIsLoading(false);
     }
-  }, [userId, posterId]);
+  }, [userId, posterId, eventId]);
 
   const levels = [
     {
@@ -108,6 +110,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
           .from('interests')
           .insert([
             {
+              event_id: eventId,
               participant_id: userId,
               poster_id: posterId,
               interest_level: level,
@@ -164,13 +167,13 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
         {/* ナビゲーションボタン */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <Link
-            href="/my-dashboard"
+            href={`/${eventId}/my-dashboard`}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-sm flex items-center justify-center gap-1.5"
           >
             📊 マイページに戻る
           </Link>
           <Link
-            href="/"
+            href={`/${eventId}`}
             className="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-sm text-sm flex items-center justify-center gap-1.5"
           >
             🏠 トップに戻る
@@ -203,7 +206,7 @@ export default function InterestForm({ posterId, userId }: InterestFormProps) {
 
         <div className="pt-2">
           <Link
-            href="/"
+            href={`/${eventId}`}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/20 text-sm flex items-center justify-center gap-1.5"
           >
             🏠 トップページに戻る

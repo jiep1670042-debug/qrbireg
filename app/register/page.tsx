@@ -2,13 +2,15 @@
 
 import { useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useEventId } from '@/lib/useEventId';
 import QRScanner from '@/components/QRScanner';
 import { supabase } from '@/lib/supabase';
 
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const eventId = useEventId();
+  const redirect = searchParams.get('redirect') || `/${eventId}`;
 
   const [idPart1, setIdPart1] = useState('');
   const [idPart2, setIdPart2] = useState('');
@@ -31,6 +33,7 @@ function RegisterContent() {
       const { data, error } = await supabase
         .from('participants')
         .select('*')
+        .eq('event_id', eventId)
         .eq('id', id.trim())
         .single();
 
@@ -50,7 +53,7 @@ function RegisterContent() {
   const confirmAndSave = () => {
     if (!confirmingParticipant) return;
     try {
-      localStorage.setItem('userId', confirmingParticipant.id);
+      localStorage.setItem(`userId_${eventId}`, confirmingParticipant.id);
       setStatusMsg(`登録完了: ${confirmingParticipant.last_name} ${confirmingParticipant.first_name} 様`);
       setIsSuccess(true);
 
