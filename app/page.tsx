@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEventId } from '@/lib/useEventId';
@@ -14,7 +14,7 @@ interface ParticipantInfo {
   company?: string;
 }
 
-export default function Home() {
+export function HomeContent() {
   const router = useRouter();
   const eventId = useEventId();
 
@@ -237,5 +237,17 @@ export default function Home() {
 
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+      </main>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
