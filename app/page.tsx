@@ -14,7 +14,7 @@ interface ParticipantInfo {
   company?: string;
 }
 
-export function HomeContent() {
+function HomeContent() {
   const router = useRouter();
   const eventId = useEventId();
 

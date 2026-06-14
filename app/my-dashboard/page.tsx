@@ -38,7 +38,7 @@ interface ParticipantInfo {
   affiliation?: string;
 }
 
-export function MyDashboardContent() {
+function MyDashboardContent() {
   const router = useRouter();
   const eventId = useEventId();
 

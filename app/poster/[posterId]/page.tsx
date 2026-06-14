@@ -7,7 +7,7 @@ import Link from 'next/link';
 import InterestForm from '@/components/InterestForm';
 import { supabase } from '@/lib/supabase';
 
-export function PosterPageContent({ params }: { params: { posterId: string } }) {
+function PosterPageContent({ params }: { params: { posterId: string } }) {
   const router = useRouter();
   const eventId = useEventId();
 
