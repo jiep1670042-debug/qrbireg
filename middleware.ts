@@ -40,11 +40,16 @@ export function middleware(request: NextRequest) {
   }
 
   // クエリパラメータに eventId を付与して内部リライトを実行
-  const url = request.nextUrl.clone();
-  url.pathname = restPath;
-  url.searchParams.set('eventId', eventId);
+  const rewriteUrl = new URL(restPath, request.url);
+  
+  // 既存のクエリパラメータを引き継ぐ
+  request.nextUrl.searchParams.forEach((val, key) => {
+    rewriteUrl.searchParams.set(key, val);
+  });
+  
+  rewriteUrl.searchParams.set('eventId', eventId);
 
-  return NextResponse.rewrite(url);
+  return NextResponse.rewrite(rewriteUrl);
 }
 
 export const config = {
