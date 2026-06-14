@@ -128,13 +128,13 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     const rawHeaders = lines[0].split(',');
     const headers = rawHeaders.map(h => cleanToken(h));
 
-    const result = [];
+    const result: any[] = [];
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
       // Handle commas inside quotes
-      const tokens = [];
+      const tokens: string[] = [];
       let currentToken = '';
       let insideQuotes = false;
 
