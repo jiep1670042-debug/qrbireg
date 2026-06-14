@@ -122,7 +122,7 @@ export function PosterPageContent({ params }: { params: { posterId: string } }) 
         </div>
       </div>
 
-      <InterestForm posterId={parseInt(params.posterId, 10)} userId={userId} eventId={eventId} />
+      <InterestForm posterId={parseInt(params.posterId, 10)} userId={userId!} eventId={eventId} />
     </main>
   );
 }
