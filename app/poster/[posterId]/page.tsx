@@ -4,17 +4,38 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import InterestForm from '@/components/InterestForm';
+import { supabase } from '@/lib/supabase';
 
 export default function PosterPage({ params }: { params: { posterId: string } }) {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [posterTitle, setPosterTitle] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     setUserId(storedUserId);
-    setIsLoaded(true);
-  }, []);
+
+    async function loadPosterInfo() {
+      try {
+        const { data, error } = await supabase
+          .from('posters')
+          .select('title')
+          .eq('id', parseInt(params.posterId, 10))
+          .single();
+
+        if (!error && data) {
+          setPosterTitle(data.title);
+        }
+      } catch (err) {
+        console.error('Failed to load poster info:', err);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+
+    loadPosterInfo();
+  }, [params.posterId]);
 
   if (!isLoaded) {
     return (
@@ -82,7 +103,12 @@ export default function PosterPage({ params }: { params: { posterId: string } })
         </div>
 
         <h1 className="text-3xl font-black text-slate-800 tracking-tight">ポスター {params.posterId}</h1>
-        <p className="text-slate-500 text-xs font-semibold">発表へのフィードバックをご入力ください</p>
+        {posterTitle && (
+          <p className="text-lg font-bold text-indigo-950/90 leading-snug pt-1 px-4">
+            {posterTitle}
+          </p>
+        )}
+        <p className="text-slate-500 text-xs font-semibold pt-1">発表へのフィードバックをご入力ください</p>
 
         <div className="pt-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/70 backdrop-blur-sm border border-slate-100 rounded-full shadow-sm text-xs font-semibold text-slate-600">
