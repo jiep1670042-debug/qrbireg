@@ -45,10 +45,174 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [posters, setPosters] = useState<Poster[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
+  const [qrLayout, setQrLayout] = useState<'1-portrait' | '2-landscape' | '4-portrait' | '6-portrait'>('1-portrait');
+  const [selectedPosterIds, setSelectedPosterIds] = useState<Set<number>>(new Set());
   
   const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr'>('stats');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const chunkArray = <T,>(array: T[], size: number): T[][] => {
+    const result: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      result.push(array.slice(i, i + size));
+    }
+    return result;
+  };
+
+  const getChunkSize = () => {
+    switch (qrLayout) {
+      case '1-portrait': return 1;
+      case '2-landscape': return 2;
+      case '4-portrait': return 4;
+      case '6-portrait': return 6;
+      default: return 1;
+    }
+  };
+
+  const getPrintStyles = () => {
+    switch (qrLayout) {
+      case '1-portrait':
+        return `
+          @page { size: A4 portrait; margin: 0; }
+          .print-page-group {
+            page-break-after: always;
+            page-break-inside: avoid;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            padding: 2cm;
+            background: white;
+          }
+          .print-card {
+            width: 100%;
+            max-width: 16cm;
+            border: 2px dashed #9ca3af;
+            border-radius: 24px;
+            padding: 2.5cm 1.5cm;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+          }
+          .print-card-title { font-size: 22pt; font-weight: 800; line-height: 1.4; margin: 18pt 0; }
+          .print-card-no { font-size: 36pt; font-weight: 900; }
+          .print-card-presenter { font-size: 14pt; font-weight: 700; }
+          .print-card-qr { width: 6.5cm; height: 6.5cm; }
+        `;
+      case '2-landscape':
+        return `
+          @page { size: A4 landscape; margin: 0; }
+          .print-page-group {
+            page-break-after: always;
+            page-break-inside: avoid;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            align-items: center;
+            justify-items: center;
+            box-sizing: border-box;
+            padding: 1.5cm;
+            gap: 1.5cm;
+            background: white;
+          }
+          .print-card {
+            width: 100%;
+            max-width: 11cm;
+            height: 85%;
+            border: 1.5px dashed #9ca3af;
+            border-radius: 20px;
+            padding: 1.2cm 0.8cm;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+          }
+          .print-card-title { font-size: 15pt; font-weight: 800; line-height: 1.3; margin: 10pt 0; }
+          .print-card-no { font-size: 26pt; font-weight: 900; }
+          .print-card-presenter { font-size: 11pt; font-weight: 700; }
+          .print-card-qr { width: 4.8cm; height: 4.8cm; }
+        `;
+      case '4-portrait':
+        return `
+          @page { size: A4 portrait; margin: 0; }
+          .print-page-group {
+            page-break-after: always;
+            page-break-inside: avoid;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            align-items: center;
+            justify-items: center;
+            box-sizing: border-box;
+            padding: 1.2cm;
+            gap: 1cm;
+            background: white;
+          }
+          .print-card {
+            width: 95%;
+            height: 90%;
+            border: 1px dashed #9ca3af;
+            border-radius: 16px;
+            padding: 0.8cm 0.5cm;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+          }
+          .print-card-title { font-size: 11pt; font-weight: 800; line-height: 1.3; margin: 6pt 0; }
+          .print-card-no { font-size: 20pt; font-weight: 900; }
+          .print-card-presenter { font-size: 9pt; font-weight: 700; }
+          .print-card-qr { width: 3.5cm; height: 3.5cm; }
+        `;
+      case '6-portrait':
+        return `
+          @page { size: A4 portrait; margin: 0; }
+          .print-page-group {
+            page-break-after: always;
+            page-break-inside: avoid;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            align-items: center;
+            justify-items: center;
+            box-sizing: border-box;
+            padding: 1cm;
+            gap: 0.8cm;
+            background: white;
+          }
+          .print-card {
+            width: 95%;
+            height: 92%;
+            border: 1px dashed #9ca3af;
+            border-radius: 12px;
+            padding: 0.5cm 0.4cm;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+          }
+          .print-card-title { font-size: 9pt; font-weight: 800; line-height: 1.2; margin: 4pt 0; }
+          .print-card-no { font-size: 16pt; font-weight: 900; }
+          .print-card-presenter { font-size: 8pt; font-weight: 700; }
+          .print-card-qr { width: 2.8cm; height: 2.8cm; }
+        `;
+      default:
+        return '';
+    }
+  };
 
   // Individual Add Form States
   const [newPartId, setNewPartId] = useState('');
@@ -130,7 +294,15 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
         .order('id', { ascending: true });
 
       if (posterError) throw posterError;
-      setPosters((posterData as any) || []);
+      const loadedPosters = (posterData as any) || [];
+      setPosters(loadedPosters);
+
+      // Initialize selected poster IDs with all loaded posters
+      setSelectedPosterIds(prev => {
+        const next = new Set<number>();
+        loadedPosters.forEach((p: any) => next.add(p.id));
+        return next;
+      });
 
       // 4. Fetch interests
       const { data: interestData, error: interestError } = await supabase
@@ -1202,70 +1374,166 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
 
               {/* Tab 3: QR Code Sheet Print */}
               {activeTab === 'qr' && (
-                <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg text-left space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
-                    <div className="space-y-1">
-                      <h3 className="font-black text-slate-800 text-lg">🖨️ ポスター貼付用 QRコード印刷シート</h3>
+                <div className="grid md:grid-cols-3 gap-8 text-left">
+                  {/* Left Print Control Settings Panel */}
+                  <div className="md:col-span-1 space-y-6">
+                    {/* Layout Selector Card */}
+                    <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg space-y-4">
+                      <h3 className="font-black text-slate-800 text-base">📐 印刷レイアウト</h3>
                       <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                        「印刷画面を開く」ボタンを押すと、各ポスター掲示用のシートがページごとに分割されてブラウザの印刷ダイアログが開きます。
+                        A4用紙に配置するQRコードの数と用紙の向きを選択します。
                       </p>
-                    </div>
-                    <button
-                      onClick={() => window.print()}
-                      disabled={posters.length === 0}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] text-xs shadow-md shadow-blue-500/20 shrink-0 w-full sm:w-auto"
-                    >
-                      🖨️ 印刷画面を開く (PDF保存)
-                    </button>
-                  </div>
-
-                  {posters.length === 0 ? (
-                    <p className="py-12 text-slate-400 text-xs font-semibold text-center">印刷するポスター情報がありません。</p>
-                  ) : (
-                    <div className="space-y-6">
-                      <span className="text-xs font-extrabold text-blue-500 uppercase tracking-widest block bg-blue-50 w-fit px-2.5 py-1 rounded">印刷プレビュー</span>
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        {posters.map((p) => {
-                          const qrUrl = typeof window !== 'undefined' 
-                            ? `${window.location.origin}/${eventId}/poster/${p.id}` 
-                            : `/${eventId}/poster/${p.id}`;
-                          const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
-
-                          return (
-                            <div key={p.id} className="border border-dashed border-slate-300 p-6 rounded-2xl bg-white flex flex-col items-center text-center space-y-3.5 shadow-sm max-w-sm mx-auto w-full">
-                              <span className="bg-slate-100 text-slate-700 text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase">
-                                {event?.name}
-                              </span>
-                              <div className="text-2xl font-black text-slate-800">
-                                ポスター No. {p.id}
-                              </div>
-                              <div className="text-xs font-bold text-slate-700 leading-snug px-2 line-clamp-2 h-9 flex items-center justify-center">
-                                {p.title}
-                              </div>
-                              <div className="text-[10px] text-slate-500">
-                                {p.presenter ? (
-                                  <span>発表者: {p.presenter.last_name} {p.presenter.first_name} 様 ({p.presenter.company})</span>
-                                ) : (
-                                  <span className="text-slate-400">発表者情報なし</span>
-                                )}
-                              </div>
-                              {/* QR Code */}
-                              <div className="w-36 h-36 border border-slate-200/80 rounded-xl p-2 bg-white shadow-inner flex items-center justify-center">
-                                <img
-                                  src={qrImgSrc}
-                                  alt={`Poster ${p.id} QR Code`}
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              <div className="text-[9px] text-slate-400 font-bold leading-normal px-2">
-                                📱 スマホのカメラでQRコードを読み取り、<br />興味登録・フィードバックを送信してください。
-                              </div>
+                      
+                      <div className="space-y-2">
+                        {[
+                          { id: '1-portrait', label: '1シートに1個 (A4縦)', desc: 'ポスター横のメイン掲示用' },
+                          { id: '2-landscape', label: '1シートに2個 (A4横)', desc: '中型掲示用' },
+                          { id: '4-portrait', label: '1シートに4個 (A4縦)', desc: '小型掲示・配布用' },
+                          { id: '6-portrait', label: '1シートに6個 (A4縦)', desc: '受付配布・ミニサイズ用' }
+                        ].map(item => (
+                          <label
+                            key={item.id}
+                            className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${qrLayout === item.id ? 'border-blue-500 bg-blue-50/50' : 'border-slate-100 hover:bg-slate-50/50'}`}
+                          >
+                            <input
+                              type="radio"
+                              name="qrLayout"
+                              value={item.id}
+                              checked={qrLayout === item.id}
+                              onChange={() => setQrLayout(item.id as any)}
+                              className="mt-1"
+                            />
+                            <div className="space-y-0.5">
+                              <span className="text-xs font-black text-slate-800">{item.label}</span>
+                              <span className="text-[10px] text-slate-400 font-medium block">{item.desc}</span>
                             </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Poster Selector Checkbox Card */}
+                    <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg space-y-4">
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <h3 className="font-black text-slate-800 text-base">🎯 印刷対象ポスター</h3>
+                        <span className="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-0.5 rounded border border-blue-100/50">
+                          {selectedPosterIds.size} / {posters.length}件選択中
+                        </span>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedPosterIds(new Set(posters.map(p => p.id)))}
+                          className="bg-slate-50 hover:bg-slate-100 text-slate-600 font-extrabold py-2 px-3 rounded-xl border border-slate-200 text-[10px] transition-colors w-full"
+                        >
+                          すべて選択
+                        </button>
+                        <button
+                          onClick={() => setSelectedPosterIds(new Set())}
+                          className="bg-slate-50 hover:bg-slate-100 text-slate-600 font-extrabold py-2 px-3 rounded-xl border border-slate-200 text-[10px] transition-colors w-full"
+                        >
+                          すべて解除
+                        </button>
+                      </div>
+
+                      <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                        {posters.map(p => {
+                          const isChecked = selectedPosterIds.has(p.id);
+                          return (
+                            <label
+                              key={p.id}
+                              className={`flex items-start gap-2.5 p-2 rounded-xl border cursor-pointer transition-colors ${isChecked ? 'bg-slate-50/50 border-slate-200' : 'border-transparent hover:bg-slate-50/30'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  setSelectedPosterIds(prev => {
+                                    const next = new Set(prev);
+                                    if (e.target.checked) next.add(p.id);
+                                    else next.delete(p.id);
+                                    return next;
+                                  });
+                                }}
+                                className="mt-0.5"
+                              />
+                              <div className="space-y-0.5">
+                                <span className="font-bold text-slate-700">No.{p.id}</span>
+                                <span className="text-[10px] text-slate-400 font-semibold line-clamp-1 block">{p.title}</span>
+                              </div>
+                            </label>
                           );
                         })}
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Right Print Preview Area */}
+                  <div className="md:col-span-2 glass-panel p-6 rounded-3xl border border-white/70 shadow-lg space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <h3 className="font-black text-slate-800 text-lg">🖨️ ポスター貼付用 QRコード印刷シート</h3>
+                        <p className="text-xs text-slate-500 font-semibold leading-relaxed mt-0.5">
+                          「印刷画面を開く」ボタンを押すと、選択したポスターがページごとに分割されてブラウザの印刷ダイアログが開きます。
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => window.print()}
+                        disabled={printablePosters.length === 0}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] text-xs shadow-md shadow-blue-500/20 shrink-0 w-full sm:w-auto flex items-center justify-center gap-1"
+                      >
+                        🖨️ 印刷画面を開く (PDF保存)
+                      </button>
+                    </div>
+
+                    {printablePosters.length === 0 ? (
+                      <p className="py-12 text-slate-400 text-xs font-semibold text-center">印刷対象ポスターが選択されていません。左側のパネルから選択してください。</p>
+                    ) : (
+                      <div className="space-y-6">
+                        <span className="text-xs font-extrabold text-blue-500 uppercase tracking-widest block bg-blue-50 w-fit px-2.5 py-1 rounded">印刷プレビュー（縮小表示）</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {printablePosters.map((p) => {
+                            const qrUrl = typeof window !== 'undefined' 
+                              ? `${window.location.origin}/${eventId}/poster/${p.id}` 
+                              : `/${eventId}/poster/${p.id}`;
+                            const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
+
+                            return (
+                              <div key={p.id} className="border border-dashed border-slate-300 p-6 rounded-2xl bg-white flex flex-col items-center text-center space-y-3.5 shadow-sm max-w-sm mx-auto w-full relative">
+                                <span className="bg-slate-100 text-slate-700 text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase">
+                                  {event?.name}
+                                </span>
+                                <div className="text-2xl font-black text-slate-800">
+                                  ポスター No. {p.id}
+                                </div>
+                                <div className="text-xs font-bold text-slate-700 leading-snug px-2 line-clamp-2 h-9 flex items-center justify-center">
+                                  {p.title}
+                                </div>
+                                <div className="text-[10px] text-slate-500">
+                                  {p.presenter ? (
+                                    <span>発表者: {p.presenter.last_name} {p.presenter.first_name} 様 ({p.presenter.company})</span>
+                                  ) : (
+                                    <span className="text-slate-400">発表者情報なし</span>
+                                  )}
+                                </div>
+                                {/* QR Code */}
+                                <div className="w-36 h-36 border border-slate-200/80 rounded-xl p-2 bg-white shadow-inner flex items-center justify-center">
+                                  <img
+                                    src={qrImgSrc}
+                                    alt={`Poster ${p.id} QR Code`}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <div className="text-[9px] text-slate-400 font-bold leading-normal px-2">
+                                  📱 スマホのカメラでQRコードを読み取り、<br />興味登録・フィードバックを送信してください。
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </>
@@ -1274,45 +1542,50 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
         </div>
       </main>
 
-      {/* Print-Only Area (Hidden on screen, Visible on print) */}
+      {/* 2. Print-Only Area (Hidden on screen, Visible on print) */}
       <div className="print-only">
-        {posters.map((p) => {
-          const qrUrl = typeof window !== 'undefined' 
-            ? `${window.location.origin}/${eventId}/poster/${p.id}` 
-            : `/${eventId}/poster/${p.id}`;
-          const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+        {chunkArray(printablePosters, getChunkSize()).map((group, groupIdx) => (
+          <div key={groupIdx} className="print-page-group">
+            {group.map((p) => {
+              const qrUrl = typeof window !== 'undefined' 
+                ? `${window.location.origin}/${eventId}/poster/${p.id}` 
+                : `/${eventId}/poster/${p.id}`;
+              const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
 
-          return (
-            <div key={p.id} className="print-page-card">
-              <div className="print-event-tag">{event?.name}</div>
-              <div className="print-poster-no">ポスター No. {p.id}</div>
-              
-              <div className="print-title-box">
-                <div className="print-poster-title">{p.title}</div>
-              </div>
-
-              {p.presenter && (
-                <div className="print-presenter-info">
-                  発表者：{p.presenter.last_name} {p.presenter.first_name} 様
-                  <span className="print-presenter-company">（{p.presenter.company} {p.presenter.affiliation || ''}）</span>
+              return (
+                <div key={p.id} className="print-card">
+                  <div className="print-card-header font-extrabold text-slate-500 tracking-wider uppercase text-[10pt] border-b border-slate-200 pb-2 w-full mb-3 text-center">
+                    {event?.name}
+                  </div>
+                  <div className="print-card-no font-black text-slate-900 text-center">
+                    ポスター No. {p.id}
+                  </div>
+                  <div className="print-card-title font-extrabold text-slate-800 leading-snug text-center">
+                    {p.title}
+                  </div>
+                  {p.presenter && (
+                    <div className="print-card-presenter text-slate-700 font-bold text-center">
+                      発表者：{p.presenter.last_name} {p.presenter.first_name} 様
+                      <span className="text-[9pt] font-normal text-slate-500 block mt-1 text-center">
+                        （{p.presenter.company} {p.presenter.affiliation || ''}）
+                      </span>
+                    </div>
+                  )}
+                  <div className="print-card-qr-wrapper my-4 flex justify-center items-center">
+                    <img
+                      src={qrImgSrc}
+                      alt={`Poster ${p.id} QR Code`}
+                      className="print-card-qr mx-auto block"
+                    />
+                  </div>
+                  <div className="print-card-hint text-[9pt] font-extrabold text-slate-400 leading-relaxed text-center">
+                    📱 スマートフォンの標準カメラ等でスキャンすると、<br />自動で興味・フィードバック登録画面が開きます。
+                  </div>
                 </div>
-              )}
-
-              {/* High-res QR Code */}
-              <div className="print-qr-wrapper">
-                <img
-                  src={qrImgSrc}
-                  alt={`Poster ${p.id} QR Code`}
-                  className="print-qr-img"
-                />
-              </div>
-
-              <div className="print-footer-hint">
-                📱 スマートフォンの標準カメラ等でスキャンすると、<br />自動で興味・フィードバック登録画面が開きます。
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Print-Specific Styles */}
@@ -1334,83 +1607,8 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
             margin: 0 !important;
             padding: 0 !important;
           }
-          .print-page-card {
-            page-break-after: always;
-            page-break-inside: avoid;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 2.5cm;
-            box-sizing: border-box;
-          }
-          .print-event-tag {
-            font-size: 14pt;
-            font-weight: 800;
-            color: #4b5563;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border: 2px solid #e5e7eb;
-            padding: 6px 18px;
-            border-radius: 9999px;
-            margin-bottom: 24pt;
-          }
-          .print-poster-no {
-            font-size: 32pt;
-            font-weight: 900;
-            color: #111827;
-            margin-bottom: 16pt;
-          }
-          .print-title-box {
-            border-top: 3px double #d1d5db;
-            border-bottom: 3px double #d1d5db;
-            padding: 18pt 0;
-            margin-bottom: 16pt;
-            width: 100%;
-            max-width: 18cm;
-          }
-          .print-poster-title {
-            font-size: 18pt;
-            font-weight: 800;
-            color: #1f2937;
-            line-height: 1.4;
-          }
-          .print-presenter-info {
-            font-size: 13pt;
-            font-weight: 700;
-            color: #374151;
-            margin-bottom: 24pt;
-          }
-          .print-presenter-company {
-            font-size: 10pt;
-            color: #6b7280;
-            font-weight: 500;
-            display: block;
-            margin-top: 4px;
-          }
-          .print-qr-wrapper {
-            border: 1px solid #e5e7eb;
-            padding: 16px;
-            border-radius: 20px;
-            background: white;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            margin-bottom: 24pt;
-            display: inline-block;
-          }
-          .print-qr-img {
-            width: 5.5cm;
-            height: 5.5cm;
-            display: block;
-          }
-          .print-footer-hint {
-            font-size: 10pt;
-            font-weight: 700;
-            color: #9ca3af;
-            line-height: 1.5;
-          }
+          
+          ${getPrintStyles()}
         }
       `}</style>
     </>
