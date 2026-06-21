@@ -123,7 +123,7 @@ function HomeContent() {
 
         <div className="space-y-3">
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            ポスター発表 興味登録
+            ポスター発表<br />興味・関心フィードバック
           </h1>
           {eventName ? (
             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-50/80 text-blue-700 border border-blue-100/50 rounded-full text-xs font-bold shadow-sm mx-auto mt-1">
