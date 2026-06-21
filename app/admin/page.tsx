@@ -141,6 +141,48 @@ export default function GlobalAdminPage() {
     }
   };
 
+  const handleClearEventData = async (eventId: string, eventName: string) => {
+    const doubleConfirm = window.confirm(
+      `警告：イベント「${eventName} (${eventId})」の【登録データのみ】をすべて削除しますか？\n\nイベント自体は削除されませんが、登録されているすべての参加者、ポスター、およびフィードバックのデータが【完全に削除され、元に戻せなくなります】。`
+    );
+    if (!doubleConfirm) return;
+
+    const secondConfirm = window.confirm(
+      `本当によろしいですか？\nこの操作は元に戻せません。データをクリアしてよろしければ「OK」を押してください。`
+    );
+    if (!secondConfirm) return;
+
+    setErrorMsg('');
+    try {
+      // 1. Delete interests
+      const { error: interestsError } = await supabase
+        .from('interests')
+        .delete()
+        .eq('event_id', eventId);
+      if (interestsError) throw interestsError;
+
+      // 2. Delete posters
+      const { error: postersError } = await supabase
+        .from('posters')
+        .delete()
+        .eq('event_id', eventId);
+      if (postersError) throw postersError;
+
+      // 3. Delete participants
+      const { error: partError } = await supabase
+        .from('participants')
+        .delete()
+        .eq('event_id', eventId);
+      if (partError) throw partError;
+
+      alert(`イベント「${eventName}」の登録データ（参加者・ポスター・フィードバック）を一括クリアしました。`);
+      fetchEvents();
+    } catch (err: any) {
+      console.error('Failed to clear event data:', err);
+      setErrorMsg(err.message || 'データのクリアに失敗しました。');
+    }
+  };
+
   if (!isAuthenticated) {
     return <AdminLogin onLoginSuccess={() => {
       setIsAuthenticated(true);
@@ -328,6 +370,13 @@ export default function GlobalAdminPage() {
                           ✏️
                         </button>
                       )}
+                      <button
+                        onClick={() => handleClearEventData(event.id, event.name)}
+                        className="bg-amber-50 hover:bg-amber-100 text-amber-600 font-bold py-2 px-2.5 rounded-xl border border-amber-100 text-xs transition-colors"
+                        title="登録データをクリア（イベント枠は残す）"
+                      >
+                        🧹
+                      </button>
                       <button
                         onClick={() => handleDeleteEvent(event.id, event.name)}
                         className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 px-2.5 rounded-xl border border-rose-100 text-xs transition-colors"
