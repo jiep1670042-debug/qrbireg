@@ -746,6 +746,9 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const totalFeedbacks = interests.length;
   const uniqueVisitorsCount = new Set(interests.map(i => i.participant_id)).size;
 
+  // Filter selected posters for printing
+  const printablePosters = posters.filter(p => selectedPosterIds.has(p.id));
+
   // Aggregate stats per poster
   const posterStats = posters.map(p => {
     const posterFeedbacks = interests.filter(i => i.poster_id === p.id);
