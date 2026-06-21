@@ -29,11 +29,11 @@ interface EventInfo {
 
 interface Interest {
   id: number;
-  visitor_id: string;
+  participant_id: string;
   poster_id: number;
-  level: number;
+  interest_level: number;
   comment?: string;
-  share_contact?: boolean;
+  contact_allowed?: boolean;
   created_at: string;
 }
 
@@ -487,7 +487,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     const rows = interests.map(i => {
       const poster = posters.find(p => p.id === i.poster_id);
       const presenter = poster?.presenter;
-      const visitor = participants.find(p => p.id === i.visitor_id);
+      const visitor = participants.find(p => p.id === i.participant_id);
 
       const presenterName = presenter ? `${presenter.last_name} ${presenter.first_name}` : '';
       const presenterCompany = presenter ? `${presenter.company || ''} ${presenter.affiliation || ''}`.trim() : '';
@@ -501,13 +501,13 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
         poster?.presenter_id || '',
         `"${presenterName}"`,
         `"${presenterCompany}"`,
-        i.visitor_id,
+        i.participant_id,
         `"${visitorName}"`,
         `"${visitorCompany}"`,
-        '★'.repeat(i.level),
-        i.level,
+        '★'.repeat(i.interest_level || 0),
+        i.interest_level || 0,
         `"${(i.comment || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-        i.share_contact ? '可' : '否',
+        i.contact_allowed ? '可' : '否',
         new Date(i.created_at).toLocaleString('ja-JP')
       ];
     });
@@ -572,13 +572,13 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const totalParticipants = participants.length;
   const totalPosters = posters.length;
   const totalFeedbacks = interests.length;
-  const uniqueVisitorsCount = new Set(interests.map(i => i.visitor_id)).size;
+  const uniqueVisitorsCount = new Set(interests.map(i => i.participant_id)).size;
 
   // Aggregate stats per poster
   const posterStats = posters.map(p => {
     const posterFeedbacks = interests.filter(i => i.poster_id === p.id);
     const count = posterFeedbacks.length;
-    const sumStars = posterFeedbacks.reduce((acc, curr) => acc + curr.level, 0);
+    const sumStars = posterFeedbacks.reduce((acc, curr) => acc + (curr.interest_level || 0), 0);
     const avgStars = count > 0 ? (sumStars / count).toFixed(1) : '0.0';
     return {
       id: p.id,
