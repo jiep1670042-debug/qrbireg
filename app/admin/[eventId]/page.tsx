@@ -709,6 +709,17 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       });
   };
 
+  // Dynamic naming print handler
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    const layoutNum = qrLayout.split('-')[0];
+    document.title = `QR Interest Reg_${eventId}_${layoutNum}`;
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 500);
+  };
+
   // Generate templates for download
   const downloadTemplate = (type: 'participants' | 'posters') => {
     let csvContent = '';
@@ -1481,7 +1492,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                         </p>
                       </div>
                       <button
-                        onClick={() => window.print()}
+                        onClick={handlePrint}
                         disabled={printablePosters.length === 0}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] text-xs shadow-md shadow-blue-500/20 shrink-0 w-full sm:w-auto flex items-center justify-center gap-1"
                       >
