@@ -14,6 +14,7 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [posterTitle, setPosterTitle] = useState<string | null>(null);
+  const [isEventActive, setIsEventActive] = useState<boolean>(true);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem(`userId_${eventId}`);
@@ -21,6 +22,18 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
 
     async function loadPosterInfo() {
       try {
+        // Fetch event status
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
+          .select('is_active')
+          .eq('id', eventId)
+          .single();
+
+        if (!eventError && eventData) {
+          setIsEventActive(eventData.is_active !== false); // default to true if null
+        }
+
+        // Fetch poster status
         const { data, error } = await supabase
           .from('posters')
           .select('title')
@@ -50,6 +63,34 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <p className="text-slate-500 font-bold tracking-wider text-sm animate-pulse">読み込み中...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isEventActive) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-7 border border-white/70">
+          <div className="w-20 h-20 bg-amber-50 text-amber-500 border border-amber-100/50 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-800">イベントは終了しました</h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              このイベントは現在非公開に設定されているか、すでに会期を終了しているため、フィードバックの登録は行えません。
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push(`/${eventId}`)}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] text-md border border-slate-200"
+          >
+            トップに戻る
+          </button>
         </div>
       </main>
     );

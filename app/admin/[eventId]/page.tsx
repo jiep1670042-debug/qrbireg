@@ -24,6 +24,17 @@ interface Poster {
 interface EventInfo {
   id: string;
   name: string;
+  is_active: boolean;
+}
+
+interface Interest {
+  id: number;
+  visitor_id: string;
+  poster_id: number;
+  level: number;
+  comment?: string;
+  share_contact?: boolean;
+  created_at: string;
 }
 
 export default function EventAdminPage({ params }: { params: { eventId: string } }) {
@@ -33,8 +44,9 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [posters, setPosters] = useState<Poster[]>([]);
+  const [interests, setInterests] = useState<Interest[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'participants' | 'posters' | 'qr'>('participants');
+  const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr'>('stats');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -51,6 +63,18 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [newPosterTitle, setNewPosterTitle] = useState('');
   const [newPosterPresenterId, setNewPosterPresenterId] = useState('');
   const [isAddingPoster, setIsAddingPoster] = useState(false);
+
+  // Inline Editing States
+  const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
+  const [editingPartLastName, setEditingPartLastName] = useState('');
+  const [editingPartFirstName, setEditingPartFirstName] = useState('');
+  const [editingPartCompany, setEditingPartCompany] = useState('');
+  const [editingPartAffiliation, setEditingPartAffiliation] = useState('');
+  const [editingPartEmail, setEditingPartEmail] = useState('');
+
+  const [editingPosterId, setEditingPosterId] = useState<number | null>(null);
+  const [editingPosterTitle, setEditingPosterTitle] = useState('');
+  const [editingPosterPresenterId, setEditingPosterPresenterId] = useState('');
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('isAdminAuthenticated');
@@ -108,6 +132,16 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       if (posterError) throw posterError;
       setPosters((posterData as any) || []);
 
+      // 4. Fetch interests
+      const { data: interestData, error: interestError } = await supabase
+        .from('interests')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+
+      if (interestError) throw interestError;
+      setInterests(interestData || []);
+
     } catch (err: any) {
       console.error('Failed to load event dashboard data:', err);
       setErrorMsg(err.message || 'データロードに失敗しました。');
@@ -116,15 +150,31 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     }
   };
 
+  // Event publish/active toggle
+  const handleToggleActive = async () => {
+    if (!event) return;
+    const newStatus = !event.is_active;
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ is_active: newStatus })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      setEvent({ ...event, is_active: newStatus });
+    } catch (err: any) {
+      console.error('Failed to update event status:', err);
+      alert('公開ステータスの更新に失敗しました: ' + err.message);
+    }
+  };
+
   // Simple CSV Parser
   const parseCSV = (text: string) => {
     const lines = text.split(/\r?\n/);
     if (lines.length <= 1) return [];
 
-    // Helper to clean quotes and whitespace
     const cleanToken = (t: string) => t.trim().replace(/^["']|["']$/g, '').replace(/""/g, '"');
 
-    // Parse header line
     const rawHeaders = lines[0].split(',');
     const headers = rawHeaders.map(h => cleanToken(h));
 
@@ -133,7 +183,6 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Handle commas inside quotes
       const tokens: string[] = [];
       let currentToken = '';
       let insideQuotes = false;
@@ -176,14 +225,13 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       }
 
       const confirmImport = window.confirm(`${parsedData.length} 件のデータをインポートしますか？`);
-      if (!confirmConfirm(confirmImport)) return;
+      if (!confirmImport) return;
 
       setIsLoading(true);
       setErrorMsg('');
 
       try {
         if (type === 'participants') {
-          // Prepare participant rows with event_id
           const rows = parsedData.map(row => ({
             id: row.id || '',
             event_id: eventId,
@@ -202,7 +250,6 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           alert(`${rows.length} 名の参加者をインポートしました！`);
 
         } else {
-          // Prepare poster rows with event_id
           const rows = parsedData.map(row => ({
             id: parseInt(row.id, 10) || 0,
             event_id: eventId,
@@ -218,7 +265,6 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           alert(`${rows.length} 件のポスターをインポートしました！`);
         }
 
-        // Refresh data
         loadEventData();
       } catch (err: any) {
         console.error(`Failed to import ${type} CSV:`, err);
@@ -227,11 +273,8 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       }
     };
     reader.readAsText(file);
-    // Reset file input value
     e.target.value = '';
   };
-
-  const confirmConfirm = (v: boolean) => v;
 
   // Individual Insert Handlers
   const handleAddParticipant = async (e: React.FormEvent) => {
@@ -258,7 +301,6 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
 
       if (error) throw error;
 
-      // Reset & refresh
       setNewPartId('');
       setNewPartLastName('');
       setNewPartFirstName('');
@@ -311,7 +353,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
 
   // Delete Individual Handlers
   const handleDeleteParticipant = async (id: string, name: string) => {
-    if (!window.confirm(`参加者「${name} (${id})」を削除しますか？\n（この参加者が登録したフィードバックやポスター情報も影響を受ける場合があります）`)) return;
+    if (!window.confirm(`参加者「${name} (${id})」を削除しますか？\n（この参加者が登録したフィードバックやポスター情報も自動で削除されます）`)) return;
 
     setErrorMsg('');
     try {
@@ -348,12 +390,152 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     }
   };
 
-  if (!isAuthenticated) {
-    return <AdminLogin onLoginSuccess={() => {
-      setIsAuthenticated(true);
+  // Inline Edit Participant Handlers
+  const startEditParticipant = (p: Participant) => {
+    setEditingParticipantId(p.id);
+    setEditingPartLastName(p.last_name);
+    setEditingPartFirstName(p.first_name);
+    setEditingPartCompany(p.company || '');
+    setEditingPartAffiliation(p.affiliation || '');
+    setEditingPartEmail(p.email || '');
+  };
+
+  const handleUpdateParticipant = async (id: string) => {
+    if (!editingPartLastName.trim() || !editingPartFirstName.trim()) {
+      alert('氏名は必須です。');
+      return;
+    }
+    setErrorMsg('');
+    try {
+      const { error } = await supabase
+        .from('participants')
+        .update({
+          last_name: editingPartLastName.trim(),
+          first_name: editingPartFirstName.trim(),
+          company: editingPartCompany.trim() || null,
+          affiliation: editingPartAffiliation.trim() || null,
+          email: editingPartEmail.trim() || null
+        })
+        .eq('event_id', eventId)
+        .eq('id', id);
+
+      if (error) throw error;
+      setEditingParticipantId(null);
       loadEventData();
-    }} />;
-  }
+    } catch (err: any) {
+      console.error('Failed to update participant:', err);
+      setErrorMsg(err.message || '参加者情報の更新に失敗しました。');
+    }
+  };
+
+  // Inline Edit Poster Handlers
+  const startEditPoster = (p: Poster) => {
+    setEditingPosterId(p.id);
+    setEditingPosterTitle(p.title);
+    setEditingPosterPresenterId(p.presenter_id || '');
+  };
+
+  const handleUpdatePoster = async (id: number) => {
+    if (!editingPosterTitle.trim()) {
+      alert('タイトルは必須です。');
+      return;
+    }
+    setErrorMsg('');
+    try {
+      const { error } = await supabase
+        .from('posters')
+        .update({
+          title: editingPosterTitle.trim(),
+          presenter_id: editingPosterPresenterId.trim() || null
+        })
+        .eq('event_id', eventId)
+        .eq('id', id);
+
+      if (error) throw error;
+      setEditingPosterId(null);
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update poster:', err);
+      setErrorMsg(err.message || 'ポスター情報の更新に失敗しました。');
+    }
+  };
+
+  // CSV Exporter for Interests
+  const handleExportInterestsCSV = () => {
+    if (interests.length === 0) {
+      alert('エクスポートするフィードバックデータがありません。');
+      return;
+    }
+
+    const headers = [
+      'フィードバックID',
+      'ポスターNo',
+      'ポスタータイトル',
+      '発表者ID',
+      '発表者氏名',
+      '発表者所属',
+      '投票者ID',
+      '投票者氏名',
+      '投票者所属/会社',
+      '興味レベル(星)',
+      '興味レベル(数値)',
+      'コメント',
+      '連絡先共有',
+      '登録日時'
+    ];
+
+    const rows = interests.map(i => {
+      const poster = posters.find(p => p.id === i.poster_id);
+      const presenter = poster?.presenter;
+      const visitor = participants.find(p => p.id === i.visitor_id);
+
+      const presenterName = presenter ? `${presenter.last_name} ${presenter.first_name}` : '';
+      const presenterCompany = presenter ? `${presenter.company || ''} ${presenter.affiliation || ''}`.trim() : '';
+      const visitorName = visitor ? `${visitor.last_name} ${visitor.first_name}` : '';
+      const visitorCompany = visitor ? `${visitor.company || ''} ${visitor.affiliation || ''}`.trim() : '';
+
+      return [
+        i.id,
+        i.poster_id,
+        `"${(poster?.title || '').replace(/"/g, '""')}"`,
+        poster?.presenter_id || '',
+        `"${presenterName}"`,
+        `"${presenterCompany}"`,
+        i.visitor_id,
+        `"${visitorName}"`,
+        `"${visitorCompany}"`,
+        '★'.repeat(i.level),
+        i.level,
+        `"${(i.comment || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+        i.share_contact ? '可' : '否',
+        new Date(i.created_at).toLocaleString('ja-JP')
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `event_${eventId}_interests.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Copy Presenter Link
+  const handleCopyPresenterLink = (posterId: number) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/dashboard/${posterId}?eventId=${eventId}`;
+    navigator.clipboard.writeText(url)
+      .then(() => alert(`ポスターNo.${posterId} の発表者ダッシュボードURLをコピーしました！`))
+      .catch((err) => {
+        console.error('Failed to copy URL:', err);
+        alert(`コピーに失敗しました。以下のURLを手動でコピーしてください:\n${url}`);
+      });
+  };
 
   // Generate templates for download
   const downloadTemplate = (type: 'participants' | 'posters') => {
@@ -367,7 +549,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       filename = 'posters_template.csv';
     }
 
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM for Excel friendly opening
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
     const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -379,11 +561,43 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     document.body.removeChild(link);
   };
 
+  if (!isAuthenticated) {
+    return <AdminLogin onLoginSuccess={() => {
+      setIsAuthenticated(true);
+      loadEventData();
+    }} />;
+  }
+
+  // Pre-calculate statistical data
+  const totalParticipants = participants.length;
+  const totalPosters = posters.length;
+  const totalFeedbacks = interests.length;
+  const uniqueVisitorsCount = new Set(interests.map(i => i.visitor_id)).size;
+
+  // Aggregate stats per poster
+  const posterStats = posters.map(p => {
+    const posterFeedbacks = interests.filter(i => i.poster_id === p.id);
+    const count = posterFeedbacks.length;
+    const sumStars = posterFeedbacks.reduce((acc, curr) => acc + curr.level, 0);
+    const avgStars = count > 0 ? (sumStars / count).toFixed(1) : '0.0';
+    return {
+      id: p.id,
+      title: p.title,
+      presenter: p.presenter,
+      count,
+      sumStars,
+      avgStars: parseFloat(avgStars)
+    };
+  });
+
+  // Sort by sum of stars descending
+  const sortedPosterStats = [...posterStats].sort((a, b) => b.sumStars - a.sumStars || b.count - a.count);
+  const maxStarsVal = sortedPosterStats.length > 0 ? Math.max(...sortedPosterStats.map(s => s.sumStars)) : 0;
+
   return (
     <>
-      {/* 1. Normal View (Visible on Screen, Hidden on Print) */}
       <main className="no-print min-h-screen p-4 md:p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-6xl mx-auto space-y-8">
           
           {/* Header */}
           <header className="glass-panel p-6 md:p-8 rounded-3xl border border-white/70 shadow-xl shadow-blue-900/5 space-y-4">
@@ -395,8 +609,26 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight pt-1">
                   {event ? event.name : 'イベント管理'}
                 </h1>
-                <div className="text-[10px] text-slate-400 font-mono font-bold">
-                  Event ID: {eventId}
+                <div className="flex items-center gap-3 mt-1.5">
+                  <div className="text-[10px] text-slate-400 font-mono font-bold">
+                    Event ID: {eventId}
+                  </div>
+                  
+                  {/* Event active/inactive switch */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55">
+                    <span className="text-[10px] font-extrabold text-slate-500">公開設定:</span>
+                    <button
+                      onClick={handleToggleActive}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.is_active ? 'translate-x-4' : 'translate-x-0'}`}
+                      />
+                    </button>
+                    <span className={`text-[10px] font-black ${event?.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {event?.is_active ? '公開中（アクティブ）' : '非公開（非アクティブ）'}
+                    </span>
+                  </div>
                 </div>
               </div>
               
@@ -405,7 +637,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                   href="/admin"
                   className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
                 >
-                  ← イベント一覧に戻る
+                  ← イベント一覧へ
                 </Link>
                 <button
                   onClick={loadEventData}
@@ -423,24 +655,30 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
             )}
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-100 pt-4 gap-2">
+            <div className="flex border-b border-slate-100 pt-4 gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
+              <button
+                onClick={() => setActiveTab('stats')}
+                className={`py-2.5 px-4 font-bold text-sm transition-all border-b-2 outline-none ${activeTab === 'stats' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                📊 統計ダッシュボード
+              </button>
               <button
                 onClick={() => setActiveTab('participants')}
                 className={`py-2.5 px-4 font-bold text-sm transition-all border-b-2 outline-none ${activeTab === 'participants' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
               >
-                👥 参加者管理 ({participants.length})
+                👥 参加者管理 ({totalParticipants})
               </button>
               <button
                 onClick={() => setActiveTab('posters')}
                 className={`py-2.5 px-4 font-bold text-sm transition-all border-b-2 outline-none ${activeTab === 'posters' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
               >
-                🖼️ ポスター管理 ({posters.length})
+                🖼️ ポスター管理 ({totalPosters})
               </button>
               <button
                 onClick={() => setActiveTab('qr')}
                 className={`py-2.5 px-4 font-bold text-sm transition-all border-b-2 outline-none ${activeTab === 'qr' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
               >
-                🖨️ ポスターQRコード印刷シート
+                🖨️ QR印刷シート
               </button>
             </div>
           </header>
@@ -452,6 +690,92 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
             </div>
           ) : (
             <>
+              {/* Tab 0: Stats Dashboard */}
+              {activeTab === 'stats' && (
+                <div className="space-y-8">
+                  {/* KPI Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="glass-panel p-5 rounded-2xl border border-white/70 shadow-md text-left flex flex-col justify-between">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">👥 登録参加者数</span>
+                      <div className="text-3xl font-black text-slate-800 mt-2">
+                        {totalParticipants} <span className="text-xs font-semibold text-slate-500">名</span>
+                      </div>
+                    </div>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/70 shadow-md text-left flex flex-col justify-between">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">🚶‍♂️ 来場者数（アクティブ）</span>
+                      <div className="text-3xl font-black text-slate-800 mt-2">
+                        {uniqueVisitorsCount} <span className="text-xs font-semibold text-slate-500">名</span>
+                      </div>
+                    </div>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/70 shadow-md text-left flex flex-col justify-between">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">🖼️ 登録ポスター数</span>
+                      <div className="text-3xl font-black text-slate-800 mt-2">
+                        {totalPosters} <span className="text-xs font-semibold text-slate-500">件</span>
+                      </div>
+                    </div>
+                    <div className="glass-panel p-5 rounded-2xl border border-white/70 shadow-md text-left flex flex-col justify-between">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">💬 総フィードバック数</span>
+                      <div className="text-3xl font-black text-slate-800 mt-2">
+                        {totalFeedbacks} <span className="text-xs font-semibold text-slate-500">件</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions & Graph */}
+                  <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg text-left space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <h3 className="font-black text-slate-800 text-lg">🔥 ポスター別興味度ランキング</h3>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">ポスター発表に対する「興味度（★の総数）」のランキングです。</p>
+                      </div>
+                      <button
+                        onClick={handleExportInterestsCSV}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2.5 px-4 rounded-xl transition-all duration-300 active:scale-[0.97] text-xs shadow-md shadow-blue-500/15 flex items-center gap-1.5"
+                      >
+                        📥 フィードバックCSVを出力
+                      </button>
+                    </div>
+
+                    {sortedPosterStats.length === 0 ? (
+                      <p className="py-12 text-slate-400 text-xs font-semibold text-center">統計データがありません。フィードバックが登録されるとここに反映されます。</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {sortedPosterStats.map((stat, idx) => {
+                          const percentage = maxStarsVal > 0 ? (stat.sumStars / maxStarsVal) * 100 : 0;
+                          return (
+                            <div key={stat.id} className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-bold text-slate-700">
+                                <div className="flex items-center gap-2">
+                                  <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${idx === 0 ? 'bg-amber-400 text-white shadow-sm' : idx === 1 ? 'bg-slate-300 text-white shadow-sm' : idx === 2 ? 'bg-amber-600/70 text-white shadow-sm' : 'bg-slate-100 text-slate-500'}`}>
+                                    {idx + 1}
+                                  </span>
+                                  <span className="font-mono text-blue-600 font-extrabold">No. {stat.id}</span>
+                                  <span className="text-slate-800 truncate max-w-xs md:max-w-md font-semibold">{stat.title}</span>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    {stat.presenter ? `(${stat.presenter.last_name} ${stat.presenter.first_name} 様)` : ''}
+                                  </span>
+                                </div>
+                                <div className="font-mono space-x-2 shrink-0">
+                                  <span className="text-amber-500">★{stat.sumStars}</span>
+                                  <span className="text-slate-400 font-medium">({stat.count}件の投票)</span>
+                                  <span className="text-indigo-600 font-extrabold">平均 {stat.avgStars}</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Tab 1: Participants Management */}
               {activeTab === 'participants' && (
                 <div className="grid md:grid-cols-3 gap-8">
@@ -587,19 +911,98 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                           <tbody>
                             {participants.map((p) => (
                               <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                <td className="py-2.5 font-mono font-bold text-slate-500">{p.id}</td>
-                                <td className="py-2.5 font-bold text-slate-800">{p.last_name} {p.first_name}</td>
-                                <td className="py-2.5 text-slate-500">
-                                  {p.company || ''} <span className="text-[10px] text-slate-400">{p.affiliation || ''}</span>
+                                <td className="py-2.5 font-mono font-bold text-slate-500 align-middle">{p.id}</td>
+                                <td className="py-2.5 font-bold text-slate-800 align-middle">
+                                  {editingParticipantId === p.id ? (
+                                    <div className="flex gap-1">
+                                      <input
+                                        type="text"
+                                        value={editingPartLastName}
+                                        onChange={(e) => setEditingPartLastName(e.target.value)}
+                                        className="rounded border border-slate-200 px-1 py-0.5 text-xs w-16"
+                                        placeholder="姓"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editingPartFirstName}
+                                        onChange={(e) => setEditingPartFirstName(e.target.value)}
+                                        className="rounded border border-slate-200 px-1 py-0.5 text-xs w-16"
+                                        placeholder="名"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span>{p.last_name} {p.first_name}</span>
+                                  )}
                                 </td>
-                                <td className="py-2.5 text-slate-400 font-mono">{p.email || '—'}</td>
-                                <td className="py-2.5 text-right">
-                                  <button
-                                    onClick={() => handleDeleteParticipant(p.id, `${p.last_name} ${p.first_name}`)}
-                                    className="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 text-[10px] bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
-                                  >
-                                    削除
-                                  </button>
+                                <td className="py-2.5 text-slate-500 align-middle">
+                                  {editingParticipantId === p.id ? (
+                                    <div className="flex flex-col gap-1 max-w-[150px]">
+                                      <input
+                                        type="text"
+                                        value={editingPartCompany}
+                                        onChange={(e) => setEditingPartCompany(e.target.value)}
+                                        className="rounded border border-slate-200 px-1 py-0.5 text-[10px]"
+                                        placeholder="会社名/大学名"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editingPartAffiliation}
+                                        onChange={(e) => setEditingPartAffiliation(e.target.value)}
+                                        className="rounded border border-slate-200 px-1 py-0.5 text-[10px]"
+                                        placeholder="所属"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span>
+                                      {p.company || ''} <span className="text-[10px] text-slate-400">{p.affiliation || ''}</span>
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 text-slate-400 font-mono align-middle">
+                                  {editingParticipantId === p.id ? (
+                                    <input
+                                      type="email"
+                                      value={editingPartEmail}
+                                      onChange={(e) => setEditingPartEmail(e.target.value)}
+                                      className="rounded border border-slate-200 px-1 py-0.5 text-xs w-full max-w-[150px]"
+                                      placeholder="メールアドレス"
+                                    />
+                                  ) : (
+                                    <span>{p.email || '—'}</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 text-right align-middle shrink-0">
+                                  {editingParticipantId === p.id ? (
+                                    <div className="flex justify-end gap-1.5">
+                                      <button
+                                        onClick={() => handleUpdateParticipant(p.id)}
+                                        className="text-emerald-600 hover:text-emerald-700 font-bold px-2 py-1 text-[10px] bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                                      >
+                                        保存
+                                      </button>
+                                      <button
+                                        onClick={() => setEditingParticipantId(null)}
+                                        className="text-slate-500 hover:text-slate-600 font-bold px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                                      >
+                                        取消
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex justify-end gap-1.5">
+                                      <button
+                                        onClick={() => startEditParticipant(p)}
+                                        className="text-blue-500 hover:text-blue-700 font-bold px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                      >
+                                        編集
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteParticipant(p.id, `${p.last_name} ${p.first_name}`)}
+                                        className="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 text-[10px] bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
+                                      >
+                                        削除
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -706,17 +1109,37 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                             <tr className="border-b border-slate-100 text-slate-400 font-extrabold">
                               <th className="py-2.5 pr-2 w-16">No</th>
                               <th className="py-2.5 pr-2">ポスタータイトル</th>
-                              <th className="py-2.5 pr-2 w-40">発表者 (ID)</th>
-                              <th className="py-2.5 text-right w-16">操作</th>
+                              <th className="py-2.5 pr-2 w-36">発表者 (ID)</th>
+                              <th className="py-2.5 text-right w-44">操作</th>
                             </tr>
                           </thead>
                           <tbody>
                             {posters.map((p) => (
                               <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                <td className="py-2.5 font-bold text-blue-600 text-sm">No. {p.id}</td>
-                                <td className="py-2.5 font-semibold text-slate-800 pr-2 leading-normal">{p.title}</td>
-                                <td className="py-2.5 text-slate-600">
-                                  {p.presenter ? (
+                                <td className="py-2.5 font-bold text-blue-600 text-sm align-middle">No. {p.id}</td>
+                                <td className="py-2.5 font-semibold text-slate-800 pr-2 leading-normal align-middle">
+                                  {editingPosterId === p.id ? (
+                                    <textarea
+                                      value={editingPosterTitle}
+                                      onChange={(e) => setEditingPosterTitle(e.target.value)}
+                                      className="rounded border border-slate-200 px-1 py-0.5 text-xs w-full leading-normal"
+                                      rows={2}
+                                      placeholder="タイトル"
+                                    />
+                                  ) : (
+                                    <span>{p.title}</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 text-slate-600 align-middle">
+                                  {editingPosterId === p.id ? (
+                                    <input
+                                      type="text"
+                                      value={editingPosterPresenterId}
+                                      onChange={(e) => setEditingPosterPresenterId(e.target.value)}
+                                      className="rounded border border-slate-200 px-1 py-0.5 text-xs w-full max-w-[120px]"
+                                      placeholder="発表者ID"
+                                    />
+                                  ) : p.presenter ? (
                                     <div className="space-y-0.5">
                                       <div className="font-bold text-slate-800">{p.presenter.last_name} {p.presenter.first_name}</div>
                                       <div className="text-[10px] text-slate-400">{p.presenter.company}</div>
@@ -727,13 +1150,45 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                                     <span className="text-slate-400">未割当</span>
                                   )}
                                 </td>
-                                <td className="py-2.5 text-right">
-                                  <button
-                                    onClick={() => handleDeletePoster(p.id, p.title)}
-                                    className="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 text-[10px] bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
-                                  >
-                                    削除
-                                  </button>
+                                <td className="py-2.5 text-right align-middle shrink-0">
+                                  {editingPosterId === p.id ? (
+                                    <div className="flex justify-end gap-1.5">
+                                      <button
+                                        onClick={() => handleUpdatePoster(p.id)}
+                                        className="text-emerald-600 hover:text-emerald-700 font-bold px-2 py-1 text-[10px] bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                                      >
+                                        保存
+                                      </button>
+                                      <button
+                                        onClick={() => setEditingPosterId(null)}
+                                        className="text-slate-500 hover:text-slate-600 font-bold px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                                      >
+                                        取消
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex justify-end gap-1.5">
+                                      <button
+                                        onClick={() => handleCopyPresenterLink(p.id)}
+                                        className="text-indigo-600 hover:text-indigo-800 font-bold px-2 py-1 text-[10px] bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                                        title="発表者用リンクをコピー"
+                                      >
+                                        🔗 リンク
+                                      </button>
+                                      <button
+                                        onClick={() => startEditPoster(p)}
+                                        className="text-blue-500 hover:text-blue-700 font-bold px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                      >
+                                        編集
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeletePoster(p.id, p.title)}
+                                        className="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 text-[10px] bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
+                                      >
+                                        削除
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -819,7 +1274,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
         </div>
       </main>
 
-      {/* 2. Print-Only Area (Hidden on screen, Visible on print) */}
+      {/* Print-Only Area (Hidden on screen, Visible on print) */}
       <div className="print-only">
         {posters.map((p) => {
           const qrUrl = typeof window !== 'undefined' 
@@ -862,16 +1317,13 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
 
       {/* Print-Specific Styles */}
       <style jsx global>{`
-        /* Screen styling helper */
         @media screen {
           .print-only {
             display: none !important;
           }
         }
 
-        /* Print styling (activates on window.print()) */
         @media print {
-          /* Hide all screen components */
           .no-print, header, nav, button, main {
             display: none !important;
           }
@@ -882,7 +1334,6 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
             margin: 0 !important;
             padding: 0 !important;
           }
-          /* Print Card Layout: Center on Page */
           .print-page-card {
             page-break-after: always;
             page-break-inside: avoid;
