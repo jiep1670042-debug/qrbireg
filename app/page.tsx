@@ -39,7 +39,7 @@ function HomeContent() {
   };
 
   const handleClearRegistration = () => {
-    if (window.confirm('登録データを削除して、未登録状態に戻しますか？')) {
+    if (window.confirm('この端末の登録情報（ログイン状態）を解除しますか？\n\n※これまでに送信した興味・フィードバックデータは削除されずに残ります。')) {
       localStorage.removeItem(`userId_${eventId}`);
       setUserId(null);
       setParticipant(null);
@@ -202,17 +202,20 @@ function HomeContent() {
               </div>
               */}
               <div className="flex flex-col items-center gap-3 pt-4">
+                {/* 復活させる可能性があるため、一時的に非表示にします
                 <Link
                   href={`/${eventId}/register`}
                   className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline"
                 >
                   別の申込番号で登録し直す 🔄
                 </Link>
+                */}
                 <button
                   onClick={handleClearRegistration}
-                  className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline"
+                  className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline flex flex-col items-center gap-1"
                 >
-                  参加者登録を解除する ⚠️
+                  <span>この端末の登録（ログイン）を解除する ⚠️</span>
+                  <span className="text-[10px] text-slate-400 font-normal hover:no-underline">(登録済みのフィードバックは削除されません)</span>
                 </button>
               </div>
             </div>
