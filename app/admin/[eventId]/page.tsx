@@ -25,6 +25,7 @@ interface EventInfo {
   id: string;
   name: string;
   is_active: boolean;
+  max_votes?: number;
 }
 
 interface Interest {
@@ -37,12 +38,22 @@ interface Interest {
   created_at: string;
 }
 
+interface AdminVote {
+  id: number;
+  participant_id: string;
+  poster_id: number;
+  rank: number;
+  reason?: string;
+  created_at: string;
+}
+
 export default function EventAdminPage({ params }: { params: { eventId: string } }) {
   const eventId = params.eventId;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [votes, setVotes] = useState<AdminVote[]>([]);
   const [posters, setPosters] = useState<Poster[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [qrLayout, setQrLayout] = useState<'1-portrait' | '2-landscape' | '4-portrait' | '6-portrait'>('1-portrait');
@@ -314,6 +325,16 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       if (interestError) throw interestError;
       setInterests(interestData || []);
 
+      // 5. Fetch votes
+      const { data: voteData, error: voteError } = await supabase
+        .from('votes')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+
+      if (voteError) throw voteError;
+      setVotes(voteData || []);
+
     } catch (err: any) {
       console.error('Failed to load event dashboard data:', err);
       setErrorMsg(err.message || 'データロードに失敗しました。');
@@ -337,6 +358,24 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     } catch (err: any) {
       console.error('Failed to update event status:', err);
       alert('公開ステータスの更新に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleUpdateMaxVotes = async (newMaxVotes: number) => {
+    if (!event) return;
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ max_votes: newMaxVotes })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      setEvent({ ...event, max_votes: newMaxVotes });
+      alert(`最大投票数を ${newMaxVotes} に変更しました。`);
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update max_votes:', err);
+      alert('最大投票数の更新に失敗しました: ' + err.message);
     }
   };
 
@@ -697,6 +736,70 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     document.body.removeChild(link);
   };
 
+  // CSV Exporter for Votes
+  const handleExportVotesCSV = () => {
+    if (votes.length === 0) {
+      alert('エクスポートする投票データがありません。');
+      return;
+    }
+
+    const headers = [
+      '投票データID',
+      '投票者ID',
+      '投票者氏名',
+      '投票者所属/会社',
+      '投票順位',
+      '獲得ポイント',
+      'ポスターNo',
+      'ポスタータイトル',
+      '発表者ID',
+      '発表者氏名',
+      '発表者所属/会社',
+      '1位の選択理由',
+      '投票日時'
+    ];
+
+    const rows = votes.map(v => {
+      const poster = posters.find(p => p.id === v.poster_id);
+      const presenter = poster?.presenter;
+      const voter = participants.find(p => p.id === v.participant_id);
+
+      const presenterName = presenter ? `${presenter.last_name} ${presenter.first_name}` : '';
+      const presenterCompany = presenter ? `${presenter.company || ''} ${presenter.affiliation || ''}`.trim() : '';
+      const voterName = voter ? `${voter.last_name} ${voter.first_name}` : '';
+      const voterCompany = voter ? `${voter.company || ''} ${voter.affiliation || ''}`.trim() : '';
+      const points = 6 - v.rank;
+
+      return [
+        v.id,
+        v.participant_id,
+        `"${voterName}"`,
+        `"${voterCompany}"`,
+        `${v.rank}位`,
+        points,
+        v.poster_id,
+        `"${(poster?.title || '').replace(/"/g, '""')}"`,
+        poster?.presenter_id || '',
+        `"${presenterName}"`,
+        `"${presenterCompany}"`,
+        `"${(v.reason || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+        new Date(v.created_at).toLocaleString('ja-JP')
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `event_${eventId}_votes.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Copy Presenter Link
   const handleCopyPresenterLink = (posterId: number) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -757,6 +860,51 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const totalFeedbacks = interests.length;
   const uniqueVisitorsCount = new Set(interests.map(i => i.participant_id)).size;
 
+  // 🏆 優秀ポスター投票の集計（傾斜配点）
+  const getRankPoints = (rank: number) => {
+    return 6 - rank;
+  };
+
+  const voteStats = posters.map(p => {
+    const posterVotes = votes.filter(v => v.poster_id === p.id);
+    const voteCount = posterVotes.length;
+    const totalPoints = posterVotes.reduce((acc, curr) => acc + getRankPoints(curr.rank), 0);
+    
+    const rankCounts = [0, 0, 0, 0, 0];
+    posterVotes.forEach(v => {
+      if (v.rank >= 1 && v.rank <= 5) {
+        rankCounts[v.rank - 1]++;
+      }
+    });
+
+    const reasons = posterVotes
+      .filter(v => v.rank === 1 && v.reason && v.reason.trim() !== '')
+      .map(v => {
+        const voter = participants.find(part => part.id === v.participant_id);
+        const voterName = voter ? `${voter.last_name} ${voter.first_name}` : '不明な投票者';
+        return {
+          voterName,
+          reason: v.reason || ''
+        };
+      });
+
+    return {
+      id: p.id,
+      title: p.title,
+      presenter: p.presenter,
+      voteCount,
+      totalPoints,
+      rankCounts,
+      reasons
+    };
+  });
+
+  const sortedVoteStats = [...voteStats]
+    .filter(s => s.voteCount > 0)
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.voteCount - a.voteCount || a.id - b.id);
+  const maxPointsVal = sortedVoteStats.length > 0 ? Math.max(...sortedVoteStats.map(s => s.totalPoints)) : 0;
+  const uniqueVotersCount = new Set(votes.map(v => v.participant_id)).size;
+
   // Filter selected posters for printing
   const printablePosters = posters.filter(p => selectedPosterIds.has(p.id));
 
@@ -814,6 +962,22 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     <span className={`text-[10px] font-black ${event?.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {event?.is_active ? '公開中（アクティブ）' : '非公開（非アクティブ）'}
                     </span>
+                  </div>
+
+                  {/* Max votes configuration */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
+                    <span className="font-extrabold text-slate-500">優秀投票枠数 (X):</span>
+                    <select
+                      value={event?.max_votes || 5}
+                      onChange={(e) => handleUpdateMaxVotes(parseInt(e.target.value, 10))}
+                      className="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none"
+                    >
+                      <option value={1}>1位まで (1票)</option>
+                      <option value={2}>2位まで (2票)</option>
+                      <option value={3}>3位まで (3票)</option>
+                      <option value={4}>4位まで (4票)</option>
+                      <option value={5}>5位まで (5票)</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -953,6 +1117,88 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                                   style={{ width: `${percentage}%` }}
                                 />
                               </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 🏆 優秀ポスター投票集計（傾斜配点） */}
+                  <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg text-left space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <h3 className="font-black text-slate-800 text-lg">🏆 優秀ポスター投票結果</h3>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                          傾斜配点による投票の合計ポイントランキングです。（1位=5pt, 2位=4pt, 3位=3pt, 4位=2pt, 5位=1pt / 投票者数: {uniqueVotersCount} 名）
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleExportVotesCSV}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 px-4 rounded-xl transition-all duration-300 active:scale-[0.97] text-xs shadow-md shadow-emerald-500/15 flex items-center gap-1.5"
+                      >
+                        📥 投票結果CSVを出力
+                      </button>
+                    </div>
+
+                    {sortedVoteStats.length === 0 ? (
+                      <p className="py-12 text-slate-400 text-xs font-semibold text-center">投票データがありません。一般参加者がマイページから投票するとここに反映されます。</p>
+                    ) : (
+                      <div className="space-y-6">
+                        {sortedVoteStats.map((stat, idx) => {
+                          const percentage = maxPointsVal > 0 ? (stat.totalPoints / maxPointsVal) * 100 : 0;
+                          return (
+                            <div key={stat.id} className="space-y-2 border-b border-slate-50 pb-4 last:border-0 last:pb-0">
+                              <div className="flex justify-between text-xs font-bold text-slate-700">
+                                <div className="flex items-center gap-2">
+                                  <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${idx === 0 ? 'bg-amber-400 text-white shadow-sm' : idx === 1 ? 'bg-slate-300 text-white shadow-sm' : idx === 2 ? 'bg-amber-600/70 text-white shadow-sm' : 'bg-slate-100 text-slate-500'}`}>
+                                    {idx + 1}
+                                  </span>
+                                  <span className="font-mono text-blue-600 font-extrabold">No. {stat.id}</span>
+                                  <span className="text-slate-800 truncate max-w-xs md:max-w-md font-semibold">{stat.title}</span>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    {stat.presenter ? `(${stat.presenter.last_name} ${stat.presenter.first_name} 様)` : ''}
+                                  </span>
+                                </div>
+                                <div className="font-mono space-x-2 shrink-0">
+                                  <span className="text-emerald-600 font-extrabold">{stat.totalPoints} pt</span>
+                                  <span className="text-slate-400 font-medium">({stat.voteCount}名が選択)</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+
+                              {/* 投票内訳 */}
+                              <div className="flex flex-wrap gap-2 pt-1 text-[10px] font-semibold text-slate-500">
+                                <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">1位: {stat.rankCounts[0]}票</span>
+                                <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">2位: {stat.rankCounts[1]}票</span>
+                                <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">3位: {stat.rankCounts[2]}票</span>
+                                <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">4位: {stat.rankCounts[3]}票</span>
+                                <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">5位: {stat.rankCounts[4]}票</span>
+                              </div>
+
+                              {/* 1位の選択理由 */}
+                              {stat.reasons.length > 0 && (
+                                <details className="mt-2 text-xs text-slate-600">
+                                  <summary className="font-bold text-slate-400 hover:text-slate-600 cursor-pointer outline-none select-none">
+                                    💬 1位に選んだ理由を閲覧する ({stat.reasons.length}件)
+                                  </summary>
+                                  <div className="mt-2 bg-slate-50/60 p-3 rounded-2xl border border-slate-100/50 space-y-2.5 max-h-48 overflow-y-auto">
+                                    {stat.reasons.map((r, rIdx) => (
+                                      <div key={rIdx} className="space-y-0.5 border-b border-slate-100/40 pb-2 last:border-0 last:pb-0">
+                                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                                          <span>👤 {r.voterName}</span>
+                                        </div>
+                                        <p className="font-medium leading-relaxed whitespace-pre-wrap">{r.reason}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              )}
                             </div>
                           );
                         })}

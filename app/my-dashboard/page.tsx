@@ -38,6 +38,16 @@ interface ParticipantInfo {
   affiliation?: string;
 }
 
+interface Vote {
+  id: number;
+  rank: number;
+  reason?: string;
+  poster?: {
+    id: number;
+    title: string;
+  };
+}
+
 function MyDashboardContent() {
   const router = useRouter();
   const eventId = useEventId();
@@ -46,6 +56,9 @@ function MyDashboardContent() {
   const [participant, setParticipant] = useState<ParticipantInfo | null>(null);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [presentedPosters, setPresentedPosters] = useState<{ id: number; title: string }[]>([]);
+  const [votes, setVotes] = useState<Vote[]>([]);
+  const [maxVotes, setMaxVotes] = useState<number>(5);
+  const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>('feedbacks');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -110,6 +123,36 @@ function MyDashboardContent() {
 
         if (intError) throw intError;
         setInterests((intData as any) || []);
+
+        // Fetch max_votes from events
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
+          .select('max_votes')
+          .eq('id', eventId)
+          .single();
+        if (!eventError && eventData) {
+          setMaxVotes(eventData.max_votes || 5);
+        }
+
+        // Fetch user's votes
+        const { data: voteData, error: voteError } = await supabase
+          .from('votes')
+          .select(`
+            id,
+            rank,
+            reason,
+            poster:posters (
+              id,
+              title
+            )
+          `)
+          .eq('event_id', eventId)
+          .eq('participant_id', savedUserId)
+          .order('rank', { ascending: true });
+        
+        if (!voteError && voteData) {
+          setVotes(voteData as any);
+        }
       } catch (err: any) {
         console.error('Failed to fetch dashboard data:', err);
         setErrorMsg(err.message || 'データの取得に失敗しました');
@@ -264,6 +307,89 @@ function MyDashboardContent() {
             <p className="text-slate-400 text-xs font-medium text-left">登録した興味フィードバックがありません。</p>
           )}
         </header>
+
+        {/* 🏆 優秀ポスター投票セクション */}
+        <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/70 shadow-xl shadow-blue-900/5 text-left space-y-5">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🏆</span>
+            <div>
+              <h2 className="text-xl font-black text-slate-800 leading-tight">優秀ポスター投票</h2>
+              <p className="text-slate-400 text-xs font-semibold">1位〜最大{maxVotes}位までポスターを推薦できます（1位は推薦理由が必須です）</p>
+            </div>
+          </div>
+
+          {/* 現在の投票状況 */}
+          <div className="bg-slate-50/60 border border-slate-100 rounded-2xl p-4 space-y-3">
+            <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">現在の投票状況</div>
+            {votes.length === 0 ? (
+              <p className="text-slate-400 text-xs italic font-medium">まだ投票していません。</p>
+            ) : (
+              <div className="space-y-2">
+                {votes.map((v) => (
+                  <div key={v.id} className="flex flex-col gap-1 border-b border-slate-100/50 pb-2 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-blue-600">
+                          {v.rank}位:
+                        </span>
+                        <span className="font-bold text-slate-800">
+                          ポスター No.{v.poster?.id}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500 font-semibold line-clamp-1 max-w-[200px] md:max-w-[350px]">
+                        {v.poster?.title}
+                      </span>
+                    </div>
+                    {v.rank === 1 && v.reason && (
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-600 mt-1">
+                        <span className="font-extrabold text-slate-400 block mb-0.5">🏆 1位の選択理由:</span>
+                        <p className="font-medium whitespace-pre-wrap">{v.reason}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 投票元選択 ＆ 投票アクション */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2 border-t border-slate-100/60">
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">投票元のポスター範囲</span>
+              <div className="flex items-center gap-4 text-xs font-bold text-slate-700">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="voteSource"
+                    value="feedbacks"
+                    checked={voteSource === 'feedbacks'}
+                    onChange={() => setVoteSource('feedbacks')}
+                    className="text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  />
+                  <span>フィードバックしたポスターから</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="voteSource"
+                    value="all"
+                    checked={voteSource === 'all'}
+                    onChange={() => setVoteSource('all')}
+                    className="text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  />
+                  <span>全ポスターから</span>
+                </label>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push(`/${eventId}/vote?source=${voteSource}`)}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-xs shrink-0"
+            >
+              {votes.length === 0 ? '投票する 🗳️' : '投票内容を変更する ✏️'}
+            </button>
+          </div>
+        </div>
 
         {/* Presenter Section */}
         {presentedPosters.length > 0 && (
