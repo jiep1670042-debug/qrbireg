@@ -26,6 +26,7 @@ function VotePageContent() {
   const [votingStatus, setVotingStatus] = useState<string>('active');
   const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>(sourceParam as 'feedbacks' | 'all');
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  const [enableVoting, setEnableVoting] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -45,12 +46,13 @@ function VotePageContent() {
         // Fetch max_votes and voting_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, voting_status')
+          .select('max_votes, voting_status, enable_voting')
           .eq('id', eventId)
           .single();
         
         if (!eventError && eventData) {
           setVotingStatus(eventData.voting_status || 'not_started');
+          setEnableVoting(eventData.enable_voting !== false);
         }
         
         if (eventError) throw eventError;
@@ -234,6 +236,26 @@ function VotePageContent() {
         <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
           <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
           <p className="text-slate-500 font-semibold text-sm">データを読み込み中...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!enableVoting) {
+    return (
+      <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
+          <div className="text-rose-500 text-5xl">⚠️</div>
+          <h2 className="text-2xl font-black text-slate-800">優秀投票は利用できません</h2>
+          <p className="text-slate-500 text-sm font-medium leading-relaxed">
+            優秀ポスター投票機能は、このイベントでは無効化されています。
+          </p>
+          <button
+            onClick={() => router.push(`/${eventId}/my-dashboard`)}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl"
+          >
+            マイページに戻る
+          </button>
         </div>
       </main>
     );

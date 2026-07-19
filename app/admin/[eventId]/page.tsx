@@ -27,6 +27,7 @@ interface EventInfo {
   is_active: boolean;
   max_votes?: number;
   voting_status?: string;
+  enable_voting?: boolean;
 }
 
 interface Interest {
@@ -396,6 +397,25 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     } catch (err: any) {
       console.error('Failed to update event voting status:', err);
       alert('投票ステータスの更新に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleToggleEnableVoting = async () => {
+    if (!event) return;
+    const newStatus = !event.enable_voting;
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ enable_voting: newStatus })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      setEvent({ ...event, enable_voting: newStatus });
+      alert(`優秀投票機能を「${newStatus ? '利用する' : '利用しない'}」に変更しました。`);
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update event voting status:', err);
+      alert('優秀投票機能の利用状態の更新に失敗しました: ' + err.message);
     }
   };
 
@@ -985,34 +1005,54 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                   </div>
 
                   {/* Max votes configuration */}
+                  {event?.enable_voting && (
+                    <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
+                      <span className="font-extrabold text-slate-500">優秀投票枠数 (X):</span>
+                      <select
+                        value={event?.max_votes || 5}
+                        onChange={(e) => handleUpdateMaxVotes(parseInt(e.target.value, 10))}
+                        className="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none"
+                      >
+                        <option value={1}>1位まで (1票)</option>
+                        <option value={2}>2位まで (2票)</option>
+                        <option value={3}>3位まで (3票)</option>
+                        <option value={4}>4位まで (4票)</option>
+                        <option value={5}>5位まで (5票)</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Enable voting configuration */}
                   <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
-                    <span className="font-extrabold text-slate-500">優秀投票枠数 (X):</span>
-                    <select
-                      value={event?.max_votes || 5}
-                      onChange={(e) => handleUpdateMaxVotes(parseInt(e.target.value, 10))}
-                      className="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none"
+                    <span className="font-extrabold text-slate-500">投票機能の利用:</span>
+                    <button
+                      onClick={handleToggleEnableVoting}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.enable_voting ? 'bg-indigo-600' : 'bg-slate-300'}`}
                     >
-                      <option value={1}>1位まで (1票)</option>
-                      <option value={2}>2位まで (2票)</option>
-                      <option value={3}>3位まで (3票)</option>
-                      <option value={4}>4位まで (4票)</option>
-                      <option value={5}>5位まで (5票)</option>
-                    </select>
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.enable_voting ? 'translate-x-4' : 'translate-x-0'}`}
+                      />
+                    </button>
+                    <span className={`font-black ${event?.enable_voting ? 'text-indigo-600' : 'text-slate-400'}`}>
+                      {event?.enable_voting ? '利用する' : '利用しない'}
+                    </span>
                   </div>
 
                   {/* Event voting status configuration */}
-                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
-                    <span className="font-extrabold text-slate-500">優秀投票状況:</span>
-                    <select
-                      value={event?.voting_status || 'not_started'}
-                      onChange={(e) => handleUpdateVotingStatus(e.target.value)}
-                      className="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none"
-                    >
-                      <option value="not_started">🔒 開始前</option>
-                      <option value="active">🟢 受付中</option>
-                      <option value="closed">🛑 投票終了</option>
-                    </select>
-                  </div>
+                  {event?.enable_voting && (
+                    <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
+                      <span className="font-extrabold text-slate-500">優秀投票状況:</span>
+                      <select
+                        value={event?.voting_status || 'not_started'}
+                        onChange={(e) => handleUpdateVotingStatus(e.target.value)}
+                        className="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none"
+                      >
+                        <option value="not_started">🔒 開始前</option>
+                        <option value="active">🟢 受付中</option>
+                        <option value="closed">🛑 投票終了</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -1159,7 +1199,8 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                   </div>
 
                   {/* 🏆 優秀ポスター投票集計（傾斜配点） */}
-                  <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg text-left space-y-6">
+                  {event?.enable_voting && (
+                    <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg text-left space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
                       <div>
                         <h3 className="font-black text-slate-800 text-lg">🏆 優秀ポスター投票結果</h3>
@@ -1239,6 +1280,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               )}
 

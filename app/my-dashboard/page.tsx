@@ -59,6 +59,7 @@ function MyDashboardContent() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [maxVotes, setMaxVotes] = useState<number>(5);
   const [votingStatus, setVotingStatus] = useState<string>('not_started');
+  const [enableVoting, setEnableVoting] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -127,12 +128,13 @@ function MyDashboardContent() {
         // Fetch max_votes and voting_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, voting_status')
+          .select('max_votes, voting_status, enable_voting')
           .eq('id', eventId)
           .single();
         if (!eventError && eventData) {
           setMaxVotes(eventData.max_votes || 5);
           setVotingStatus(eventData.voting_status || 'not_started');
+          setEnableVoting(eventData.enable_voting !== false);
         }
 
         // Fetch user's votes
@@ -310,44 +312,46 @@ function MyDashboardContent() {
         </header>
 
         {/* 🏆 優秀ポスター投票セクション */}
-        <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/70 shadow-xl shadow-blue-900/5 text-left space-y-5">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🏆</span>
-            <div>
-              <h2 className="text-xl font-black text-slate-800 leading-tight">優秀ポスター投票</h2>
-              <p className="text-slate-400 text-xs font-semibold">1位〜最大{maxVotes}位までポスターを推薦できます（1位は推薦理由が必須です）</p>
+        {enableVoting && (
+          <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/70 shadow-xl shadow-blue-900/5 text-left space-y-5">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏆</span>
+              <div>
+                <h2 className="text-xl font-black text-slate-800 leading-tight">優秀ポスター投票</h2>
+                <p className="text-slate-400 text-xs font-semibold">1位〜最大{maxVotes}位までポスターを推薦できます（1位は推薦理由が必須です）</p>
+              </div>
             </div>
-          </div>
 
-          {/* 現在の投票状況 */}
-          {votingStatus !== 'active' && (
-            <div className="p-3.5 bg-amber-50/85 border border-amber-100 text-amber-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
-              <span className="text-sm">⚠️</span>
-              <span>
+            {/* 現在の投票状況 */}
+            {votingStatus !== 'active' && (
+              <div className="p-3.5 bg-amber-50/85 border border-amber-100 text-amber-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                <span className="text-sm">⚠️</span>
+                <span>
+                  {votingStatus === 'not_started' 
+                    ? '現在、優秀ポスター投票は開始前です。開始アナウンスをお待ちください。' 
+                    : '優秀ポスター投票は終了しました。ご協力ありがとうございました。'}
+                </span>
+              </div>
+            )}
+
+            {/* 投票アクション */}
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => router.push(`/${eventId}/vote`)}
+                disabled={votingStatus !== 'active'}
+                className="w-full max-w-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-8 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm disabled:from-slate-400 disabled:to-slate-400 disabled:opacity-50 disabled:cursor-not-allowed text-center"
+              >
                 {votingStatus === 'not_started' 
-                  ? '現在、優秀ポスター投票は開始前です。開始アナウンスをお待ちください。' 
-                  : '優秀ポスター投票は終了しました。ご協力ありがとうございました。'}
-              </span>
+                  ? '投票は開始前です 🔒' 
+                  : votingStatus === 'closed' 
+                  ? '投票は終了しました 🛑' 
+                  : votes.length === 0 
+                  ? '優秀ポスターを投票する 🗳️' 
+                  : '優秀ポスターの投票内容を変更する ✏️'}
+              </button>
             </div>
-          )}
-
-          {/* 投票アクション */}
-          <div className="flex justify-center pt-2">
-            <button
-              onClick={() => router.push(`/${eventId}/vote`)}
-              disabled={votingStatus !== 'active'}
-              className="w-full max-w-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-8 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm disabled:from-slate-400 disabled:to-slate-400 disabled:opacity-50 disabled:cursor-not-allowed text-center"
-            >
-              {votingStatus === 'not_started' 
-                ? '投票は開始前です 🔒' 
-                : votingStatus === 'closed' 
-                ? '投票は終了しました 🛑' 
-                : votes.length === 0 
-                ? '優秀ポスターを投票する 🗳️' 
-                : '優秀ポスターの投票内容を変更する ✏️'}
-            </button>
           </div>
-        </div>
+        )}
 
         {/* Presenter Section */}
         {presentedPosters.length > 0 && (
