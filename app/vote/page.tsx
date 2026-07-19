@@ -21,7 +21,14 @@ function VotePageContent() {
   const [posters, setPosters] = useState<Poster[]>([]);
   const [maxVotes, setMaxVotes] = useState<number>(5);
   const [selectedPosterIds, setSelectedPosterIds] = useState<(number | null)[]>([]);
-  const [reason, setReason] = useState<string>('');
+  const [reasons, setReasons] = useState<Record<number, string>>({});
+  
+  const handleReasonChange = (index: number, val: string) => {
+    setReasons(prev => ({
+      ...prev,
+      [index]: val
+    }));
+  };
   
   const [votingStatus, setVotingStatus] = useState<string>('active');
   const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>(sourceParam as 'feedbacks' | 'all');
@@ -72,18 +79,16 @@ function VotePageContent() {
         if (voteError) throw voteError;
 
         const initialSelections: (number | null)[] = Array(currentMaxVotes).fill(null);
-        let existingReason = '';
+        const initialReasons: Record<number, string> = {};
 
         voteData?.forEach((vote) => {
           if (vote.rank >= 1 && vote.rank <= currentMaxVotes) {
             initialSelections[vote.rank - 1] = vote.poster_id;
-            if (vote.rank === 1 && vote.reason) {
-              existingReason = vote.reason;
-            }
+            initialReasons[vote.rank - 1] = vote.reason || '';
           }
         });
         setSelectedPosterIds(initialSelections);
-        setReason(existingReason);
+        setReasons(initialReasons);
         setIsInitialLoadComplete(true);
 
       } catch (err: any) {
@@ -175,11 +180,14 @@ function VotePageContent() {
 
     // Check if at least one poster is selected (Optional but checking 1st rank validation)
     const firstPlacePosterId = selectedPosterIds[0];
-    if (firstPlacePosterId && !reason.trim()) {
-      setValidationError('1位の選択理由を入力してください（必須です）');
-      const elem = document.getElementById('reason-textarea');
-      elem?.focus();
-      return;
+    if (firstPlacePosterId) {
+      const firstReason = reasons[0] || '';
+      if (!firstReason.trim()) {
+        setValidationError('1位の選択理由を入力してください（必須です）');
+        const elem = document.getElementById('reason-textarea-0');
+        elem?.focus();
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -204,7 +212,7 @@ function VotePageContent() {
             participant_id: userId,
             poster_id: posterId,
             rank: rank,
-            reason: rank === 1 ? reason.trim() : null
+            reason: (reasons[index] || '').trim()
           };
         })
         .filter(Boolean) as any[];
@@ -389,34 +397,38 @@ function VotePageContent() {
                       );
                     })}
                   </select>
+
+                  {selectedValue !== '' && (
+                    <div className="space-y-1.5 animate-fade-in pl-4 border-l-2 border-indigo-200/60 mt-2">
+                      <label className="text-[11px] font-bold text-slate-700 block">
+                        {rank === 1 ? (
+                          <>🥇 1位の選択理由 <span className="text-rose-500 font-extrabold">*必須</span></>
+                        ) : (
+                          <>{rank === 2 ? '🥈 2位' : rank === 3 ? '🥉 3位' : `🎖️ ${rank}位`}の選択理由 <span className="text-slate-400 font-bold">(任意)</span></>
+                        )}
+                      </label>
+                      <textarea
+                        id={`reason-textarea-${index}`}
+                        rows={2}
+                        value={reasons[index] || ''}
+                        onChange={(e) => {
+                          handleReasonChange(index, e.target.value);
+                          if (rank === 1) setValidationError('');
+                        }}
+                        placeholder={rank === 1 ? "このポスター発表を1位に選んだ理由を記入してください。" : `${rank}位に選んだ理由を記入してください。`}
+                        className="w-full rounded-xl border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 p-3 bg-white/70 text-xs font-medium outline-none transition-all duration-200 resize-none"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          {/* Reason Field */}
-          {selectedPosterIds[0] !== null && selectedPosterIds[0] !== undefined && (
-            <div className="space-y-1.5 animate-fade-in">
-              <label className="text-xs font-bold text-slate-700 block">
-                🥇 1位の選択理由 <span className="text-rose-500 font-extrabold">*必須</span>
-              </label>
-              <textarea
-                id="reason-textarea"
-                rows={4}
-                value={reason}
-                onChange={(e) => {
-                  setReason(e.target.value);
-                  setValidationError('');
-                }}
-                placeholder="このポスター発表を1位に選んだ理由を記入してください。"
-                className="w-full rounded-2xl border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 p-4 bg-white/70 text-sm font-medium outline-none transition-all duration-200 resize-none"
-              />
-              {validationError && (
-                <p className="text-xs text-rose-600 font-bold flex items-center gap-1">
-                  ⚠️ {validationError}
-                </p>
-              )}
-            </div>
+          {validationError && (
+            <p className="text-xs text-rose-600 font-bold flex items-center gap-1 mt-2">
+              ⚠️ {validationError}
+            </p>
           )}
 
           <div className="flex gap-4 pt-2">

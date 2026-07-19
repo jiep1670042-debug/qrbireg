@@ -822,7 +822,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       '発表者ID',
       '発表者氏名',
       '発表者所属/会社',
-      '1位の選択理由',
+      '選択理由',
       '投票日時'
     ];
 
@@ -945,13 +945,14 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     });
 
     const reasons = posterVotes
-      .filter(v => v.rank === 1 && v.reason && v.reason.trim() !== '')
+      .filter(v => v.reason && v.reason.trim() !== '')
       .map(v => {
         const voter = participants.find(part => part.id === v.participant_id);
         const voterName = voter ? `${voter.last_name} ${voter.first_name}` : '不明な投票者';
         return {
           voterName,
-          reason: v.reason || ''
+          reason: v.reason || '',
+          rank: v.rank
         };
       });
 
@@ -1304,17 +1305,17 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                                 <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">5位: {stat.rankCounts[4]}票</span>
                               </div>
 
-                              {/* 1位の選択理由 */}
+                              {/* 投票の選択理由 */}
                               {stat.reasons.length > 0 && (
                                 <details className="mt-2 text-xs text-slate-600">
                                   <summary className="font-bold text-slate-400 hover:text-slate-600 cursor-pointer outline-none select-none">
-                                    💬 1位に選んだ理由を閲覧する ({stat.reasons.length}件)
+                                    💬 投票の選択理由を閲覧する ({stat.reasons.length}件)
                                   </summary>
                                   <div className="mt-2 bg-slate-50/60 p-3 rounded-2xl border border-slate-100/50 space-y-2.5 max-h-48 overflow-y-auto">
                                     {stat.reasons.map((r, rIdx) => (
                                       <div key={rIdx} className="space-y-0.5 border-b border-slate-100/40 pb-2 last:border-0 last:pb-0">
                                         <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
-                                          <span>👤 {r.voterName}</span>
+                                          <span>👤 {r.voterName} ({r.rank}位選択)</span>
                                         </div>
                                         <p className="font-medium leading-relaxed whitespace-pre-wrap">{r.reason}</p>
                                       </div>
