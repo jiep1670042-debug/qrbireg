@@ -59,7 +59,7 @@ function MyDashboardContent() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [maxVotes, setMaxVotes] = useState<number>(5);
   const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>('feedbacks');
-  const [isVotingActive, setIsVotingActive] = useState<boolean>(false);
+  const [votingStatus, setVotingStatus] = useState<string>('not_started');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -125,15 +125,15 @@ function MyDashboardContent() {
         if (intError) throw intError;
         setInterests((intData as any) || []);
 
-        // Fetch max_votes and is_voting_active from events
+        // Fetch max_votes and voting_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, is_voting_active')
+          .select('max_votes, voting_status')
           .eq('id', eventId)
           .single();
         if (!eventError && eventData) {
           setMaxVotes(eventData.max_votes || 5);
-          setIsVotingActive(eventData.is_voting_active || false);
+          setVotingStatus(eventData.voting_status || 'not_started');
         }
 
         // Fetch user's votes
@@ -321,10 +321,14 @@ function MyDashboardContent() {
           </div>
 
           {/* 現在の投票状況 */}
-          {!isVotingActive && (
+          {votingStatus !== 'active' && (
             <div className="p-3.5 bg-amber-50/85 border border-amber-100 text-amber-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
               <span className="text-sm">⚠️</span>
-              <span>現在、優秀ポスターの投票期間外です（開始前、または受付終了）。</span>
+              <span>
+                {votingStatus === 'not_started' 
+                  ? '現在、優秀ポスター投票は開始前です。開始アナウンスをお待ちください。' 
+                  : '優秀ポスター投票は終了しました。ご協力ありがとうございました。'}
+              </span>
             </div>
           )}
 
@@ -366,26 +370,26 @@ function MyDashboardContent() {
             <div className="space-y-1">
               <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">投票元のポスター範囲</span>
               <div className="flex items-center gap-4 text-xs font-bold text-slate-700">
-                <label className={`flex items-center gap-1.5 ${isVotingActive ? 'cursor-pointer' : 'cursor-not-allowed text-slate-400'}`}>
+                <label className={`flex items-center gap-1.5 ${votingStatus === 'active' ? 'cursor-pointer' : 'cursor-not-allowed text-slate-400'}`}>
                   <input
                     type="radio"
                     name="voteSource"
                     value="feedbacks"
                     checked={voteSource === 'feedbacks'}
                     onChange={() => setVoteSource('feedbacks')}
-                    disabled={!isVotingActive}
+                    disabled={votingStatus !== 'active'}
                     className="text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50"
                   />
                   <span>フィードバックしたポスターから</span>
                 </label>
-                <label className={`flex items-center gap-1.5 ${isVotingActive ? 'cursor-pointer' : 'cursor-not-allowed text-slate-400'}`}>
+                <label className={`flex items-center gap-1.5 ${votingStatus === 'active' ? 'cursor-pointer' : 'cursor-not-allowed text-slate-400'}`}>
                   <input
                     type="radio"
                     name="voteSource"
                     value="all"
                     checked={voteSource === 'all'}
                     onChange={() => setVoteSource('all')}
-                    disabled={!isVotingActive}
+                    disabled={votingStatus !== 'active'}
                     className="text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50"
                   />
                   <span>全ポスターから</span>
@@ -395,10 +399,16 @@ function MyDashboardContent() {
 
             <button
               onClick={() => router.push(`/${eventId}/vote?source=${voteSource}`)}
-              disabled={!isVotingActive}
+              disabled={votingStatus !== 'active'}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-xs shrink-0 disabled:from-slate-400 disabled:to-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {votes.length === 0 ? '投票する 🗳️' : '投票内容を変更する ✏️'}
+              {votingStatus === 'not_started' 
+                ? '投票は開始前です 🔒' 
+                : votingStatus === 'closed' 
+                ? '投票は終了しました 🛑' 
+                : votes.length === 0 
+                ? '投票する 🗳️' 
+                : '投票内容を変更する ✏️'}
             </button>
           </div>
         </div>

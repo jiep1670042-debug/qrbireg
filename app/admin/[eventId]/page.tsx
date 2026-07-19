@@ -26,7 +26,7 @@ interface EventInfo {
   name: string;
   is_active: boolean;
   max_votes?: number;
-  is_voting_active: boolean;
+  voting_status?: string;
 }
 
 interface Interest {
@@ -380,22 +380,22 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     }
   };
 
-  const handleToggleVotingActive = async () => {
+  const handleUpdateVotingStatus = async (newStatus: string) => {
     if (!event) return;
-    const newStatus = !event.is_voting_active;
     try {
       const { error } = await supabase
         .from('events')
-        .update({ is_voting_active: newStatus })
+        .update({ voting_status: newStatus })
         .eq('id', eventId);
       
       if (error) throw error;
-      setEvent({ ...event, is_voting_active: newStatus });
-      alert(`優秀投票の受付を ${newStatus ? '受付中' : '停止中'} に変更しました。`);
+      setEvent({ ...event, voting_status: newStatus });
+      const statusLabel = newStatus === 'not_started' ? '開始前' : newStatus === 'active' ? '受付中' : '投票終了';
+      alert(`優秀投票のステータスを「${statusLabel}」に変更しました。`);
       loadEventData();
     } catch (err: any) {
       console.error('Failed to update event voting status:', err);
-      alert('投票受付ステータスの更新に失敗しました: ' + err.message);
+      alert('投票ステータスの更新に失敗しました: ' + err.message);
     }
   };
 
@@ -1000,20 +1000,18 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     </select>
                   </div>
 
-                  {/* Event voting active/inactive switch */}
+                  {/* Event voting status configuration */}
                   <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
-                    <span className="font-extrabold text-slate-500">優秀投票受付:</span>
-                    <button
-                      onClick={handleToggleVotingActive}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.is_voting_active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                    <span className="font-extrabold text-slate-500">優秀投票状況:</span>
+                    <select
+                      value={event?.voting_status || 'not_started'}
+                      onChange={(e) => handleUpdateVotingStatus(e.target.value)}
+                      className="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-700 outline-none"
                     >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.is_voting_active ? 'translate-x-4' : 'translate-x-0'}`}
-                      />
-                    </button>
-                    <span className={`font-black ${event?.is_voting_active ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      {event?.is_voting_active ? '受付中' : '停止中'}
-                    </span>
+                      <option value="not_started">🔒 開始前</option>
+                      <option value="active">🟢 受付中</option>
+                      <option value="closed">🛑 投票終了</option>
+                    </select>
                   </div>
                 </div>
               </div>
