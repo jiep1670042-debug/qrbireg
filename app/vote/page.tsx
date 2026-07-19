@@ -23,6 +23,7 @@ function VotePageContent() {
   const [selectedPosterIds, setSelectedPosterIds] = useState<(number | null)[]>([]);
   const [reason, setReason] = useState<string>('');
   
+  const [isVotingActive, setIsVotingActive] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -38,12 +39,16 @@ function VotePageContent() {
 
     const loadData = async () => {
       try {
-        // 1. Fetch max_votes from events
+        // 1. Fetch max_votes and is_voting_active from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes')
+          .select('max_votes, is_voting_active')
           .eq('id', eventId)
           .single();
+        
+        if (!eventError && eventData) {
+          setIsVotingActive(eventData.is_voting_active || false);
+        }
         
         if (eventError) throw eventError;
         const currentMaxVotes = eventData?.max_votes || 5;
@@ -228,6 +233,24 @@ function VotePageContent() {
     );
   }
 
+  if (!isVotingActive) {
+    return (
+      <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
+          <div className="text-amber-500 text-5xl">⚠️</div>
+          <h2 className="text-2xl font-black text-slate-800">投票期間外です</h2>
+          <p className="text-slate-500 text-sm font-medium">優秀ポスターの投票は、現在受け付けておりません。</p>
+          <button
+            onClick={() => router.push(`/${eventId}/my-dashboard`)}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl"
+          >
+            マイページに戻る
+          </button>
+        </div>
+      </main>
+    );
+  }
+ 
   return (
     <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-xl w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 border border-white/70 space-y-6">

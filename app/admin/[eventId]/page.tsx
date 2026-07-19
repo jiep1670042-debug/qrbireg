@@ -26,6 +26,7 @@ interface EventInfo {
   name: string;
   is_active: boolean;
   max_votes?: number;
+  is_voting_active: boolean;
 }
 
 interface Interest {
@@ -376,6 +377,25 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     } catch (err: any) {
       console.error('Failed to update max_votes:', err);
       alert('最大投票数の更新に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleToggleVotingActive = async () => {
+    if (!event) return;
+    const newStatus = !event.is_voting_active;
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ is_voting_active: newStatus })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      setEvent({ ...event, is_voting_active: newStatus });
+      alert(`優秀投票の受付を ${newStatus ? '受付中' : '停止中'} に変更しました。`);
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update event voting status:', err);
+      alert('投票受付ステータスの更新に失敗しました: ' + err.message);
     }
   };
 
@@ -978,6 +998,22 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                       <option value={4}>4位まで (4票)</option>
                       <option value={5}>5位まで (5票)</option>
                     </select>
+                  </div>
+
+                  {/* Event voting active/inactive switch */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
+                    <span className="font-extrabold text-slate-500">優秀投票受付:</span>
+                    <button
+                      onClick={handleToggleVotingActive}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.is_voting_active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.is_voting_active ? 'translate-x-4' : 'translate-x-0'}`}
+                      />
+                    </button>
+                    <span className={`font-black ${event?.is_voting_active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {event?.is_voting_active ? '受付中' : '停止中'}
+                    </span>
                   </div>
                 </div>
               </div>
