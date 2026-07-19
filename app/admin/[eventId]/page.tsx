@@ -1004,6 +1004,22 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     </span>
                   </div>
 
+                  {/* Enable voting configuration */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
+                    <span className="font-extrabold text-slate-500">投票機能の利用:</span>
+                    <button
+                      onClick={handleToggleEnableVoting}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.enable_voting ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.enable_voting ? 'translate-x-4' : 'translate-x-0'}`}
+                      />
+                    </button>
+                    <span className={`font-black ${event?.enable_voting ? 'text-indigo-600' : 'text-slate-400'}`}>
+                      {event?.enable_voting ? '利用する' : '利用しない'}
+                    </span>
+                  </div>
+
                   {/* Max votes configuration */}
                   {event?.enable_voting && (
                     <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
@@ -1021,22 +1037,6 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                       </select>
                     </div>
                   )}
-
-                  {/* Enable voting configuration */}
-                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
-                    <span className="font-extrabold text-slate-500">投票機能の利用:</span>
-                    <button
-                      onClick={handleToggleEnableVoting}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.enable_voting ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.enable_voting ? 'translate-x-4' : 'translate-x-0'}`}
-                      />
-                    </button>
-                    <span className={`font-black ${event?.enable_voting ? 'text-indigo-600' : 'text-slate-400'}`}>
-                      {event?.enable_voting ? '利用する' : '利用しない'}
-                    </span>
-                  </div>
 
                   {/* Event voting status configuration */}
                   {event?.enable_voting && (
