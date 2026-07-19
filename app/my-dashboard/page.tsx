@@ -58,7 +58,6 @@ function MyDashboardContent() {
   const [presentedPosters, setPresentedPosters] = useState<{ id: number; title: string }[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [maxVotes, setMaxVotes] = useState<number>(5);
-  const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>('feedbacks');
   const [votingStatus, setVotingStatus] = useState<string>('not_started');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -332,83 +331,20 @@ function MyDashboardContent() {
             </div>
           )}
 
-          <div className="bg-slate-50/60 border border-slate-100 rounded-2xl p-4 space-y-3">
-            <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">現在の投票状況</div>
-            {votes.length === 0 ? (
-              <p className="text-slate-400 text-xs italic font-medium">まだ投票していません。</p>
-            ) : (
-              <div className="space-y-2">
-                {votes.map((v) => (
-                  <div key={v.id} className="flex flex-col gap-1 border-b border-slate-100/50 pb-2 last:border-0 last:pb-0">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-blue-600">
-                          {v.rank}位:
-                        </span>
-                        <span className="font-bold text-slate-800">
-                          ポスター No.{v.poster?.id}
-                        </span>
-                      </div>
-                      <span className="text-xs text-slate-500 font-semibold line-clamp-1 max-w-[200px] md:max-w-[350px]">
-                        {v.poster?.title}
-                      </span>
-                    </div>
-                    {v.rank === 1 && v.reason && (
-                      <div className="bg-white/80 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-600 mt-1">
-                        <span className="font-extrabold text-slate-400 block mb-0.5">🏆 1位の選択理由:</span>
-                        <p className="font-medium whitespace-pre-wrap">{v.reason}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 投票元選択 ＆ 投票アクション */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2 border-t border-slate-100/60">
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">投票元のポスター範囲</span>
-              <div className="flex items-center gap-4 text-xs font-bold text-slate-700">
-                <label className={`flex items-center gap-1.5 ${votingStatus === 'active' ? 'cursor-pointer' : 'cursor-not-allowed text-slate-400'}`}>
-                  <input
-                    type="radio"
-                    name="voteSource"
-                    value="feedbacks"
-                    checked={voteSource === 'feedbacks'}
-                    onChange={() => setVoteSource('feedbacks')}
-                    disabled={votingStatus !== 'active'}
-                    className="text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50"
-                  />
-                  <span>フィードバックしたポスターから</span>
-                </label>
-                <label className={`flex items-center gap-1.5 ${votingStatus === 'active' ? 'cursor-pointer' : 'cursor-not-allowed text-slate-400'}`}>
-                  <input
-                    type="radio"
-                    name="voteSource"
-                    value="all"
-                    checked={voteSource === 'all'}
-                    onChange={() => setVoteSource('all')}
-                    disabled={votingStatus !== 'active'}
-                    className="text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50"
-                  />
-                  <span>全ポスターから</span>
-                </label>
-              </div>
-            </div>
-
+          {/* 投票アクション */}
+          <div className="flex justify-center pt-2">
             <button
-              onClick={() => router.push(`/${eventId}/vote?source=${voteSource}`)}
+              onClick={() => router.push(`/${eventId}/vote`)}
               disabled={votingStatus !== 'active'}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-3 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-xs shrink-0 disabled:from-slate-400 disabled:to-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full max-w-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-8 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm disabled:from-slate-400 disabled:to-slate-400 disabled:opacity-50 disabled:cursor-not-allowed text-center"
             >
               {votingStatus === 'not_started' 
                 ? '投票は開始前です 🔒' 
                 : votingStatus === 'closed' 
                 ? '投票は終了しました 🛑' 
                 : votes.length === 0 
-                ? '投票する 🗳️' 
-                : '投票内容を変更する ✏️'}
+                ? '優秀ポスターを投票する 🗳️' 
+                : '優秀ポスターの投票内容を変更する ✏️'}
             </button>
           </div>
         </div>

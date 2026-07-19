@@ -15,7 +15,7 @@ function VotePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = useEventId();
-  const source = searchParams.get('source') || 'feedbacks';
+  const sourceParam = searchParams.get('source') || 'feedbacks';
 
   const [userId, setUserId] = useState<string | null>(null);
   const [posters, setPosters] = useState<Poster[]>([]);
@@ -24,11 +24,14 @@ function VotePageContent() {
   const [reason, setReason] = useState<string>('');
   
   const [votingStatus, setVotingStatus] = useState<string>('active');
+  const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>(sourceParam as 'feedbacks' | 'all');
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [validationError, setValidationError] = useState('');
 
+  // 1. Initial Load of Event Settings & User Votes
   useEffect(() => {
     const savedUserId = localStorage.getItem(`userId_${eventId}`);
     if (!savedUserId) {
@@ -37,9 +40,9 @@ function VotePageContent() {
     }
     setUserId(savedUserId);
 
-    const loadData = async () => {
+    const loadInitialData = async () => {
       try {
-        // 1. Fetch max_votes and voting_status from events
+        // Fetch max_votes and voting_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
           .select('max_votes, voting_status')
@@ -53,10 +56,51 @@ function VotePageContent() {
         if (eventError) throw eventError;
         const currentMaxVotes = eventData?.max_votes || 5;
         setMaxVotes(currentMaxVotes);
+
+        // Fetch existing votes to pre-fill the form
+        const { data: voteData, error: voteError } = await supabase
+          .from('votes')
+          .select('rank, poster_id, reason')
+          .eq('event_id', eventId)
+          .eq('participant_id', savedUserId)
+          .order('rank', { ascending: true });
         
-        // 2. Fetch posters depending on source
+        if (voteError) throw voteError;
+
+        const initialSelections: (number | null)[] = Array(currentMaxVotes).fill(null);
+        let existingReason = '';
+
+        voteData?.forEach((vote) => {
+          if (vote.rank >= 1 && vote.rank <= currentMaxVotes) {
+            initialSelections[vote.rank - 1] = vote.poster_id;
+            if (vote.rank === 1 && vote.reason) {
+              existingReason = vote.reason;
+            }
+          }
+        });
+        setSelectedPosterIds(initialSelections);
+        setReason(existingReason);
+        setIsInitialLoadComplete(true);
+
+      } catch (err: any) {
+        console.error('Failed to load initial vote data:', err);
+        setErrorMsg(err.message || 'データの読み込みに失敗しました');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [eventId]);
+
+  // 2. Fetch Posters list according to voteSource
+  useEffect(() => {
+    if (!userId || !isInitialLoadComplete) return;
+
+    const loadPosters = async () => {
+      try {
         let loadedPosters: Poster[] = [];
-        if (source === 'feedbacks') {
+        if (voteSource === 'feedbacks') {
           // Fetch interests to get posters already feedbacked by user
           const { data: intData, error: intError } = await supabase
             .from('interests')
@@ -68,11 +112,10 @@ function VotePageContent() {
               )
             `)
             .eq('event_id', eventId)
-            .eq('participant_id', savedUserId);
+            .eq('participant_id', userId);
           
           if (intError) throw intError;
           
-          // Map to unique Poster array
           const posterMap = new Map<number, string>();
           intData?.forEach((item: any) => {
             if (item.posters) {
@@ -93,41 +136,22 @@ function VotePageContent() {
         }
         setPosters(loadedPosters);
 
-        // 3. Fetch existing votes to pre-fill the form
-        const { data: voteData, error: voteError } = await supabase
-          .from('votes')
-          .select('rank, poster_id, reason')
-          .eq('event_id', eventId)
-          .eq('participant_id', savedUserId)
-          .order('rank', { ascending: true });
-        
-        if (voteError) throw voteError;
-
-        // Initialize selections array with length currentMaxVotes
-        const initialSelections: (number | null)[] = Array(currentMaxVotes).fill(null);
-        let existingReason = '';
-
-        voteData?.forEach((vote) => {
-          if (vote.rank >= 1 && vote.rank <= currentMaxVotes) {
-            initialSelections[vote.rank - 1] = vote.poster_id;
-            if (vote.rank === 1 && vote.reason) {
-              existingReason = vote.reason;
-            }
-          }
+        // If previously selected posters are not in the new list, clear them (set to null)
+        setSelectedPosterIds((prev) => {
+          return prev.map((id) => {
+            if (id === null) return null;
+            const exists = loadedPosters.some((p) => p.id === id);
+            return exists ? id : null;
+          });
         });
-        setSelectedPosterIds(initialSelections);
-        setReason(existingReason);
 
       } catch (err: any) {
-        console.error('Failed to load vote data:', err);
-        setErrorMsg(err.message || 'データの読み込みに失敗しました');
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to load posters:', err);
       }
     };
 
-    loadData();
-  }, [eventId, source]);
+    loadPosters();
+  }, [eventId, userId, voteSource, isInitialLoadComplete]);
 
   const handleSelectPoster = (rankIndex: number, posterId: number | null) => {
     setSelectedPosterIds((prev) => {
@@ -266,7 +290,7 @@ function VotePageContent() {
           </span>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight pt-1">優秀ポスター投票</h1>
           <p className="text-slate-400 text-xs font-semibold leading-relaxed">
-            {source === 'feedbacks' ? '自分がフィードバックしたポスター' : 'すべてのポスター'}の中から、優秀だと思う順に最大{maxVotes}件まで選んでください。
+            優秀だと思う順にポスターを最大{maxVotes}件まで選んでください。
           </p>
         </div>
 
@@ -277,6 +301,35 @@ function VotePageContent() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6 text-left">
+          {/* 投票元のポスター範囲の選択ラジオボタン */}
+          <div className="bg-slate-50/60 border border-slate-100/50 rounded-2xl p-4 space-y-2.5">
+            <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">投票元のポスター範囲</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-xs font-bold text-slate-700">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name="voteSource"
+                  value="feedbacks"
+                  checked={voteSource === 'feedbacks'}
+                  onChange={() => setVoteSource('feedbacks')}
+                  className="text-blue-600 focus:ring-blue-500 h-4 w-4"
+                />
+                <span>フィードバックしたポスターから選ぶ</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name="voteSource"
+                  value="all"
+                  checked={voteSource === 'all'}
+                  onChange={() => setVoteSource('all')}
+                  className="text-blue-600 focus:ring-blue-500 h-4 w-4"
+                />
+                <span>全ポスターから選ぶ</span>
+              </label>
+            </div>
+          </div>
+
           {/* Dynamic Rank Inputs */}
           <div className="space-y-4">
             {Array.from({ length: maxVotes }).map((_, index) => {
