@@ -248,9 +248,9 @@ function VotePageContent() {
       <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">
         <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-white/70">
           <div className="text-rose-500 text-5xl">⚠️</div>
-          <h2 className="text-2xl font-black text-slate-800">優秀投票は利用できません</h2>
+          <h2 className="text-2xl font-black text-slate-800">投票は利用できません</h2>
           <p className="text-slate-500 text-sm font-medium leading-relaxed">
-            優秀ポスター投票機能は、このイベントでは無効化されています。
+            投票機能は、このイベントでは無効化されています。
           </p>
           <button
             onClick={() => router.push(`/${eventId}/my-dashboard`)}
@@ -291,8 +291,8 @@ function VotePageContent() {
           </h2>
           <p className="text-slate-500 text-sm font-medium">
             {votingStatus === 'not_started' 
-              ? '優秀ポスターの投票は、まだ開始されておりません。' 
-              : '優秀ポスターの投票は、締め切られました。'}
+              ? '投票は、まだ開始されておりません。' 
+              : '投票は、締め切られました。'}
           </p>
           <button
             onClick={() => router.push(`/${eventId}/my-dashboard`)}
@@ -312,7 +312,7 @@ function VotePageContent() {
           <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-black tracking-widest px-3 py-0.5 rounded-full shadow-sm">
             VOTE
           </span>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight pt-1">優秀ポスター投票</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight pt-1">投票</h1>
           <div className="bg-indigo-50/40 border border-indigo-100/40 p-4 rounded-2xl space-y-1.5 mt-2">
             <span className="text-[9px] font-black text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold">🎯 投票基準</span>
             <p className="text-slate-700 text-xs font-bold leading-relaxed">

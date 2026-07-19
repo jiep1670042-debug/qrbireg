@@ -398,7 +398,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       if (error) throw error;
       setEvent({ ...event, voting_status: newStatus });
       const statusLabel = newStatus === 'not_started' ? '開始前' : newStatus === 'active' ? '受付中' : '投票終了';
-      alert(`優秀投票のステータスを「${statusLabel}」に変更しました。`);
+      alert(`投票のステータスを「${statusLabel}」に変更しました。`);
       loadEventData();
     } catch (err: any) {
       console.error('Failed to update event voting status:', err);
@@ -417,11 +417,11 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       
       if (error) throw error;
       setEvent({ ...event, enable_voting: newStatus });
-      alert(`優秀投票機能を「${newStatus ? '利用する' : '利用しない'}」に変更しました。`);
+      alert(`投票機能を「${newStatus ? '利用する' : '利用しない'}」に変更しました。`);
       loadEventData();
     } catch (err: any) {
       console.error('Failed to update event voting status:', err);
-      alert('優秀投票機能の利用状態の更新に失敗しました: ' + err.message);
+      alert('投票機能の利用状態の更新に失敗しました: ' + err.message);
     }
   };
 
@@ -1050,7 +1050,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                   {/* Max votes configuration */}
                   {event?.enable_voting && (
                     <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
-                      <span className="font-extrabold text-slate-500">優秀投票枠数 (X):</span>
+                      <span className="font-extrabold text-slate-500">投票枠数 (X):</span>
                       <select
                         value={event?.max_votes || 5}
                         onChange={(e) => handleUpdateMaxVotes(parseInt(e.target.value, 10))}
@@ -1068,7 +1068,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                   {/* Event voting status configuration */}
                   {event?.enable_voting && (
                     <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55 text-[10px]">
-                      <span className="font-extrabold text-slate-500">優秀投票状況:</span>
+                      <span className="font-extrabold text-slate-500">投票状況:</span>
                       <select
                         value={event?.voting_status || 'not_started'}
                         onChange={(e) => handleUpdateVotingStatus(e.target.value)}
@@ -1230,7 +1230,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg text-left space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
                       <div>
-                        <h3 className="font-black text-slate-800 text-lg">🏆 優秀ポスター投票結果</h3>
+                        <h3 className="font-black text-slate-800 text-lg">🏆 投票結果</h3>
                         <p className="text-xs text-slate-500 font-semibold mt-0.5">
                           傾斜配点による投票の合計ポイントランキングです。（1位=5pt, 2位=4pt, 3位=3pt, 4位=2pt, 5位=1pt / 投票者数: {uniqueVotersCount} 名）
                         </p>

@@ -319,7 +319,7 @@ function MyDashboardContent() {
             <div className="flex flex-col gap-1.5 w-full">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🏆</span>
-                <h2 className="text-xl font-black text-slate-800 leading-tight">優秀ポスター投票</h2>
+                <h2 className="text-xl font-black text-slate-800 leading-tight">投票</h2>
               </div>
               <div className="text-slate-500 text-xs font-bold bg-blue-50/60 border border-blue-100/55 p-3.5 rounded-2xl w-full space-y-1">
                 <p className="text-indigo-950 font-black leading-relaxed">
@@ -338,8 +338,8 @@ function MyDashboardContent() {
                 <span className="text-sm">⚠️</span>
                 <span>
                   {votingStatus === 'not_started' 
-                    ? '現在、優秀ポスター投票は開始前です。開始アナウンスをお待ちください。' 
-                    : '優秀ポスター投票は終了しました。ご協力ありがとうございました。'}
+                    ? '現在、投票は開始前です。開始アナウンスをお待ちください。' 
+                    : '投票は終了しました。ご協力ありがとうございました。'}
                 </span>
               </div>
             )}
@@ -356,8 +356,8 @@ function MyDashboardContent() {
                   : votingStatus === 'closed' 
                   ? '投票は終了しました 🛑' 
                   : votes.length === 0 
-                  ? '優秀ポスターを投票する 🗳️' 
-                  : '優秀ポスターの投票内容を変更する ✏️'}
+                  ? '投票する 🗳️' 
+                  : '投票内容を変更する ✏️'}
               </button>
             </div>
           </div>
