@@ -28,6 +28,7 @@ interface EventInfo {
   max_votes?: number;
   voting_status?: string;
   enable_voting?: boolean;
+  voting_description?: string;
 }
 
 interface Interest {
@@ -227,6 +228,10 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     }
   };
 
+  // Voting description states
+  const [votingDescription, setVotingDescription] = useState<string>('');
+  const [isSavingDesc, setIsSavingDesc] = useState<boolean>(false);
+
   // Individual Add Form States
   const [newPartId, setNewPartId] = useState('');
   const [newPartLastName, setNewPartLastName] = useState('');
@@ -278,6 +283,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
         throw new Error('指定されたイベントが見つかりません。');
       }
       setEvent(eventData);
+      setVotingDescription(eventData.voting_description || '');
 
       // 2. Fetch participants
       const { data: partData, error: partError } = await supabase
@@ -416,6 +422,27 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     } catch (err: any) {
       console.error('Failed to update event voting status:', err);
       alert('優秀投票機能の利用状態の更新に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleUpdateVotingDescription = async () => {
+    if (!event) return;
+    setIsSavingDesc(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ voting_description: votingDescription })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      setEvent({ ...event, voting_description: votingDescription });
+      alert('投票基準の説明文を保存しました。');
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update voting_description:', err);
+      alert('投票基準の保存に失敗しました: ' + err.message);
+    } finally {
+      setIsSavingDesc(false);
     }
   };
 
@@ -1214,6 +1241,27 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                       >
                         📥 投票結果CSVを出力
                       </button>
+                    </div>
+
+                    {/* 投票基準（説明文）の編集フィールド */}
+                    <div className="bg-slate-50/60 p-4.5 rounded-2xl border border-slate-100/50 space-y-2.5">
+                      <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">📝 一般画面に表示する投票基準・説明文</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={votingDescription}
+                          onChange={(e) => setVotingDescription(e.target.value)}
+                          placeholder="例：発表内容や発表技術を加味して、最も優れた発表と判断するもの"
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500"
+                        />
+                        <button
+                          onClick={handleUpdateVotingDescription}
+                          disabled={isSavingDesc}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-4 rounded-xl text-xs transition-all active:scale-[0.97] disabled:opacity-50 shrink-0"
+                        >
+                          {isSavingDesc ? '保存中...' : '保存'}
+                        </button>
+                      </div>
                     </div>
 
                     {sortedVoteStats.length === 0 ? (

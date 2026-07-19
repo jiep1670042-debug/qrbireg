@@ -27,6 +27,7 @@ function VotePageContent() {
   const [voteSource, setVoteSource] = useState<'feedbacks' | 'all'>(sourceParam as 'feedbacks' | 'all');
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const [enableVoting, setEnableVoting] = useState<boolean>(true);
+  const [votingDescription, setVotingDescription] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -46,13 +47,14 @@ function VotePageContent() {
         // Fetch max_votes and voting_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, voting_status, enable_voting')
+          .select('max_votes, voting_status, enable_voting, voting_description')
           .eq('id', eventId)
           .single();
         
         if (!eventError && eventData) {
           setVotingStatus(eventData.voting_status || 'not_started');
           setEnableVoting(eventData.enable_voting !== false);
+          setVotingDescription(eventData.voting_description || '発表内容や発表技術を加味して、最も優れた発表と判断するもの');
         }
         
         if (eventError) throw eventError;
@@ -311,9 +313,15 @@ function VotePageContent() {
             VOTE
           </span>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight pt-1">優秀ポスター投票</h1>
-          <p className="text-slate-400 text-xs font-semibold leading-relaxed">
-            優秀だと思う順にポスターを最大{maxVotes}件まで選んでください。
-          </p>
+          <div className="bg-indigo-50/40 border border-indigo-100/40 p-4 rounded-2xl space-y-1.5 mt-2">
+            <span className="text-[9px] font-black text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold">🎯 投票基準</span>
+            <p className="text-slate-700 text-xs font-bold leading-relaxed">
+              {votingDescription}
+            </p>
+            <p className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100/40 mt-1">
+              ※ 優秀だと思う順にポスターを最大{maxVotes}件まで選んでください。
+            </p>
+          </div>
         </div>
 
         {errorMsg && (

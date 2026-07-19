@@ -60,6 +60,7 @@ function MyDashboardContent() {
   const [maxVotes, setMaxVotes] = useState<number>(5);
   const [votingStatus, setVotingStatus] = useState<string>('not_started');
   const [enableVoting, setEnableVoting] = useState<boolean>(true);
+  const [votingDescription, setVotingDescription] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -128,13 +129,14 @@ function MyDashboardContent() {
         // Fetch max_votes and voting_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, voting_status, enable_voting')
+          .select('max_votes, voting_status, enable_voting, voting_description')
           .eq('id', eventId)
           .single();
         if (!eventError && eventData) {
           setMaxVotes(eventData.max_votes || 5);
           setVotingStatus(eventData.voting_status || 'not_started');
           setEnableVoting(eventData.enable_voting !== false);
+          setVotingDescription(eventData.voting_description || '発表内容や発表技術を加味して、最も優れた発表と判断するもの');
         }
 
         // Fetch user's votes
@@ -314,11 +316,19 @@ function MyDashboardContent() {
         {/* 🏆 優秀ポスター投票セクション */}
         {enableVoting && (
           <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/70 shadow-xl shadow-blue-900/5 text-left space-y-5">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🏆</span>
-              <div>
+            <div className="flex flex-col gap-1.5 w-full">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏆</span>
                 <h2 className="text-xl font-black text-slate-800 leading-tight">優秀ポスター投票</h2>
-                <p className="text-slate-400 text-xs font-semibold">1位〜最大{maxVotes}位までポスターを推薦できます（1位は推薦理由が必須です）</p>
+              </div>
+              <div className="text-slate-500 text-xs font-bold bg-blue-50/60 border border-blue-100/55 p-3.5 rounded-2xl w-full space-y-1">
+                <p className="text-indigo-950 font-black leading-relaxed">
+                  <span className="text-indigo-600 block text-[10px] uppercase tracking-wider font-extrabold mb-0.5">🎯 投票基準</span>
+                  {votingDescription}
+                </p>
+                <p className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100/60 mt-1">
+                  ※ 1位〜最大{maxVotes}位まで推薦可能（1位は選択理由が必須）
+                </p>
               </div>
             </div>
 
