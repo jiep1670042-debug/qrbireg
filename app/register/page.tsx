@@ -210,7 +210,7 @@ function RegisterContent() {
                 disabled={idPart1.length !== 3 || idPart2.length === 0}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:opacity-40 disabled:hover:from-blue-600 disabled:hover:to-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-blue-500/10 text-md mt-6"
               >
-                手入力で登録
+                申込番号入力で登録
               </button>
             </form>
 
