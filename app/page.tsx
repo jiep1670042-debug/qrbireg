@@ -116,7 +116,7 @@ function HomeContent() {
       <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-8 border border-white/60">
 
         {/* Animated Brand Icon */}
-        <div className="mx-auto w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-lg shadow-blue-400/30 overflow-hidden">
+        <div className="mx-auto w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-lg shadow-blue-500/30 overflow-hidden">
           {!imgError ? (
             <img
               src="/icon.png"
