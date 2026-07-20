@@ -102,7 +102,7 @@ function RegisterContent() {
             参加者登録
           </h1>
           <p className="text-slate-500 text-sm leading-relaxed">
-            参加証のQRコードをスキャンするか、または印字されている申込番号を入力して登録を完了してください。
+            参加証に印字されている申込番号を入力するか、または参加証のQRコードを読み取ってください。
           </p>
         </div>
 
