@@ -177,6 +177,52 @@ function RegisterContent() {
 
         {!isSuccess && !confirmingParticipant && (
           <>
+            <form onSubmit={handleManualSubmit} className="space-y-6 pt-2">
+              <div className="space-y-4">
+                <label className="block text-sm font-bold text-slate-700 text-center tracking-wider">
+                  参加証の申込番号を入力
+                </label>
+                <div className="flex items-center justify-center gap-3">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={idPart1}
+                    onChange={handlePart1Change}
+                    placeholder="123"
+                    autoFocus
+                    className="w-24 text-center rounded-2xl border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 p-4 bg-white/70 text-xl font-bold tracking-widest transition-all duration-200 outline-none"
+                  />
+                  <span className="text-2xl font-black text-slate-300">-</span>
+                  <input
+                    ref={part2Ref}
+                    type="text"
+                    inputMode="numeric"
+                    value={idPart2}
+                    onChange={handlePart2Change}
+                    placeholder="456"
+                    className="w-24 text-center rounded-2xl border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 p-4 bg-white/70 text-xl font-bold tracking-widest transition-all duration-200 outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={idPart1.length !== 3 || idPart2.length === 0}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:opacity-40 disabled:hover:from-blue-600 disabled:hover:to-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-blue-500/10 text-md mt-6"
+              >
+                手入力で登録
+              </button>
+            </form>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200/60"></div>
+              </div>
+              <div className="relative flex justify-center text-xs font-bold uppercase tracking-wider">
+                <span className="px-3 bg-[#f6fafc] text-slate-400">または</span>
+              </div>
+            </div>
+
             <div className="space-y-4">
               {!isScanning ? (
                 <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 p-6 rounded-2xl border-2 border-dashed border-blue-200/80 text-center shadow-inner">
@@ -210,51 +256,6 @@ function RegisterContent() {
                 </div>
               )}
             </div>
-
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200/60"></div>
-              </div>
-              <div className="relative flex justify-center text-xs font-bold uppercase tracking-wider">
-                <span className="px-3 bg-[#f6fafc] text-slate-400">または</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleManualSubmit} className="space-y-6 pt-2">
-              <div className="space-y-4">
-                <label className="block text-sm font-bold text-slate-700 text-center tracking-wider">
-                  参加証の申込番号を入力
-                </label>
-                <div className="flex items-center justify-center gap-3">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={idPart1}
-                    onChange={handlePart1Change}
-                    placeholder="123"
-                    className="w-24 text-center rounded-2xl border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 p-4 bg-white/70 text-xl font-bold tracking-widest transition-all duration-200 outline-none"
-                  />
-                  <span className="text-2xl font-black text-slate-300">-</span>
-                  <input
-                    ref={part2Ref}
-                    type="text"
-                    inputMode="numeric"
-                    value={idPart2}
-                    onChange={handlePart2Change}
-                    placeholder="456"
-                    className="w-24 text-center rounded-2xl border border-slate-200 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 p-4 bg-white/70 text-xl font-bold tracking-widest transition-all duration-200 outline-none"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={idPart1.length !== 3 || idPart2.length === 0}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:opacity-40 disabled:hover:from-blue-600 disabled:hover:to-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-blue-500/10 text-md mt-6"
-              >
-                手入力で登録
-              </button>
-            </form>
           </>
         )}
       </div>
