@@ -114,13 +114,40 @@ function HomeContent() {
     <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
       <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-8 border border-white/60">
 
-        {/* Animated Brand Icon */}
-        <div className="mx-auto w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex flex-col items-center justify-center shadow-lg shadow-blue-500/30 gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-          </svg>
-          <span className="text-[11px] font-black tracking-wider text-white font-mono">
-            Session<span className="text-cyan-300 font-extrabold">+</span>
+        {/* Animated Brand Icon & Logo */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/30 border border-white/20">
+            <svg className="w-14 h-14 text-white drop-shadow-sm" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Top-Left Finder Pattern */}
+              <rect x="3" y="3" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <rect x="5.5" y="5.5" width="4" height="4" rx="0.8" fill="currentColor"/>
+              
+              {/* Top-Right Finder Pattern */}
+              <rect x="20" y="3" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <rect x="22.5" y="5.5" width="4" height="4" rx="0.8" fill="currentColor"/>
+              
+              {/* Bottom-Left Finder Pattern */}
+              <rect x="3" y="20" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <rect x="5.5" y="22.5" width="4" height="4" rx="0.8" fill="currentColor"/>
+
+              {/* Data Blocks */}
+              <rect x="15" y="4" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="15" y="9.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="4" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="9.5" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="15" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="20" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="25.5" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+
+              <rect x="15" y="20.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="20.5" y="20.5" width="8.5" height="2.5" rx="0.8" fill="currentColor"/>
+              <rect x="15" y="26" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="20" y="26" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+              <rect x="25.5" y="26" width="3.5" height="2.5" rx="0.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <span className="text-xl font-black tracking-tight text-slate-800 font-mono pt-1">
+            Session<span className="text-cyan-500 font-extrabold text-2xl ml-0.5">+</span>
           </span>
         </div>
 
