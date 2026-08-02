@@ -114,40 +114,38 @@ function HomeContent() {
     <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
       <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-8 border border-white/60">
 
-        {/* Animated Brand Icon & Logo */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/30 border border-white/20">
-            <svg className="w-14 h-14 text-white drop-shadow-sm" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Top-Left Finder Pattern */}
-              <rect x="3" y="3" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-              <rect x="5.5" y="5.5" width="4" height="4" rx="0.8" fill="currentColor"/>
-              
-              {/* Top-Right Finder Pattern */}
-              <rect x="20" y="3" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-              <rect x="22.5" y="5.5" width="4" height="4" rx="0.8" fill="currentColor"/>
-              
-              {/* Bottom-Left Finder Pattern */}
-              <rect x="3" y="20" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-              <rect x="5.5" y="22.5" width="4" height="4" rx="0.8" fill="currentColor"/>
+        {/* Animated Brand Icon Card with Integrated Logo */}
+        <div className="mx-auto px-6 py-4 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl flex flex-col items-center justify-center shadow-xl shadow-blue-500/30 gap-1.5 border border-white/20">
+          <svg className="w-12 h-12 text-white drop-shadow-sm" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Top-Left Finder Pattern */}
+            <rect x="3" y="3" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+            <rect x="5.5" y="5.5" width="4" height="4" rx="0.8" fill="currentColor"/>
+            
+            {/* Top-Right Finder Pattern */}
+            <rect x="20" y="3" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+            <rect x="22.5" y="5.5" width="4" height="4" rx="0.8" fill="currentColor"/>
+            
+            {/* Bottom-Left Finder Pattern */}
+            <rect x="3" y="20" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+            <rect x="5.5" y="22.5" width="4" height="4" rx="0.8" fill="currentColor"/>
 
-              {/* Data Blocks */}
-              <rect x="15" y="4" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="15" y="9.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="4" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="9.5" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="15" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="20" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="25.5" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            {/* Data Blocks */}
+            <rect x="15" y="4" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="15" y="9.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="4" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="9.5" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="15" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="20" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="25.5" y="15" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
 
-              <rect x="15" y="20.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="20.5" y="20.5" width="8.5" height="2.5" rx="0.8" fill="currentColor"/>
-              <rect x="15" y="26" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="20" y="26" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-              <rect x="25.5" y="26" width="3.5" height="2.5" rx="0.5" fill="currentColor"/>
-            </svg>
-          </div>
-          <span className="text-xl font-black tracking-tight text-slate-800 font-mono pt-1">
-            Session<span className="text-cyan-500 font-extrabold text-2xl ml-0.5">+</span>
+            <rect x="15" y="20.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="20.5" y="20.5" width="8.5" height="2.5" rx="0.8" fill="currentColor"/>
+            <rect x="15" y="26" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="20" y="26" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+            <rect x="25.5" y="26" width="3.5" height="2.5" rx="0.5" fill="currentColor"/>
+          </svg>
+          <span className="text-base font-black tracking-wider text-white font-mono leading-none">
+            Session<span className="text-cyan-300 font-extrabold text-lg ml-0.5">+</span>
           </span>
         </div>
 
