@@ -143,8 +143,8 @@ function HomeContent() {
             <rect x="15.5" y="19.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
             <rect x="19.5" y="19.5" width="2.8" height="1.8" rx="0.3" fill="currentColor"/>
           </svg>
-          <span className="text-[11px] font-black tracking-wider text-white font-mono leading-none shrink-0">
-            Session<span className="text-cyan-300 font-extrabold text-xs ml-0.5">+</span>
+          <span className="text-[11px] font-mono font-bold tracking-tight text-white leading-none shrink-0">
+            Session<span className="text-cyan-300 font-mono font-extrabold text-xs ml-0.5">+</span>
           </span>
         </div>
 
