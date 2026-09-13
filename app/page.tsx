@@ -24,6 +24,9 @@ function HomeContent() {
   const [dbError, setDbError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [posterNumberInput, setPosterNumberInput] = useState('');
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [isCheckingPoster, setIsCheckingPoster] = useState(false);
 
   const handlePosterScanSuccess = (decodedText: string) => {
     setIsScanning(false);
@@ -35,6 +38,49 @@ function HomeContent() {
       router.push(`/${eventId}/poster/${decodedText.trim()}`);
     } else {
       alert("読み取った内容が無効なポスターQRコードです: " + decodedText);
+    }
+  };
+
+  const handleManualPosterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInputError(null);
+    const trimmed = posterNumberInput.trim();
+    if (!trimmed) {
+      setInputError('ポスター番号を入力してください');
+      return;
+    }
+    if (!/^\d+$/.test(trimmed)) {
+      setInputError('ポスター番号は半角数字で入力してください');
+      return;
+    }
+
+    const posterId = parseInt(trimmed, 10);
+    setIsCheckingPoster(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('posters')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('id', posterId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking poster:', error);
+      }
+
+      if (!data) {
+        setInputError(`ポスターNo. ${posterId} は登録されていません。番号をご確認ください。`);
+        setIsCheckingPoster(false);
+        return;
+      }
+
+      router.push(`/${eventId}/poster/${posterId}`);
+    } catch (err) {
+      console.error('Failed to submit manual poster number:', err);
+      router.push(`/${eventId}/poster/${posterId}`);
+    } finally {
+      setIsCheckingPoster(false);
     }
   };
 
@@ -168,7 +214,7 @@ function HomeContent() {
           </p>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm space-y-4">
             <p className="text-indigo-950 text-sm leading-relaxed font-extrabold">
-              📱 ポスターのQRコードをスキャンすると、<br />自動でフィードバックの登録画面が開きます。
+              📱 ポスターのQRコード読取り、または<br />ポスター番号の直接入力で画面が開きます。
             </p>
 
             {!isScanning ? (
@@ -176,7 +222,7 @@ function HomeContent() {
                 onClick={() => setIsScanning(true)}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
               >
-                <span>📷</span> カメラを起動してポスターのQRコードを読み取る
+                <span>📷</span> カメラを起動してQRコードを読み取る
               </button>
             ) : (
               <div className="space-y-3">
@@ -192,6 +238,48 @@ function HomeContent() {
                     onScanFailure={() => { }}
                   />
                 </div>
+              </div>
+            )}
+
+            {!isScanning && (
+              <div className="pt-2 border-t border-indigo-100/80 space-y-3">
+                <div className="relative flex py-0.5 items-center">
+                  <div className="flex-grow border-t border-indigo-200/60"></div>
+                  <span className="flex-shrink mx-3 text-[11px] font-extrabold text-indigo-400 uppercase tracking-wider">または</span>
+                  <div className="flex-grow border-t border-indigo-200/60"></div>
+                </div>
+
+                <form onSubmit={handleManualPosterSubmit} className="space-y-2 text-left">
+                  <label className="block text-xs font-extrabold text-indigo-950">
+                    🔢 ポスター番号を直接入力
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={posterNumberInput}
+                      onChange={(e) => {
+                        setPosterNumberInput(e.target.value);
+                        setInputError(null);
+                      }}
+                      placeholder="例: 1, 12"
+                      className="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white shadow-inner"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isCheckingPoster}
+                      className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] text-white font-extrabold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center shrink-0 disabled:opacity-50"
+                    >
+                      {isCheckingPoster ? '確認中...' : '開く ➔'}
+                    </button>
+                  </div>
+                  {inputError && (
+                    <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 bg-rose-50 p-2 rounded-lg border border-rose-100">
+                      ⚠️ {inputError}
+                    </p>
+                  )}
+                </form>
               </div>
             )}
           </div>
