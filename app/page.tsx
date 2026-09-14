@@ -92,12 +92,14 @@ function HomeContent() {
     }
   };
 
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const { data, error } = await supabase
           .from('events')
-          .select('name')
+          .select('name, is_active, event_status')
           .eq('id', eventId)
           .single();
         if (error) {
@@ -106,6 +108,11 @@ function HomeContent() {
         } else if (data) {
           setEventName(data.name);
           setDbError(null);
+          if (data.event_status) {
+            setEventStatus(data.event_status as any);
+          } else {
+            setEventStatus(data.is_active !== false ? 'active' : 'private');
+          }
         } else {
           setEventName(null);
           setDbError('No data returned from events table');
@@ -212,86 +219,119 @@ function HomeContent() {
           <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
             このシステムは、参加者が興味レベル・関心・コメントを<br />発表者に直接届けるためのものです。
           </p>
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm space-y-4">
-            <p className="text-indigo-950 text-sm leading-relaxed font-extrabold">
-              📱 ポスターのQRコード読取り、または<br />ポスター番号の直接入力で画面が開きます。
-            </p>
 
-            {!isScanning ? (
-              <button
-                onClick={() => setIsScanning(true)}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
-              >
-                <span>📷</span> カメラを起動してQRコードを読み取る
-              </button>
-            ) : (
-              <div className="space-y-3">
+          {/* Private Event State */}
+          {eventStatus === 'private' && (
+            <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-6 text-center space-y-3 shadow-inner mt-3">
+              <div className="w-14 h-14 bg-amber-100/90 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-sm border border-amber-200/50">
+                🔒
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-lg font-black text-amber-950">このイベントは現在非公開です</h2>
+                <p className="text-xs text-amber-800/90 font-medium leading-relaxed">
+                  現在、このイベントは準備中または非公開に設定されています。<br />一般参加者の登録およびフィードバックの閲覧は行えません。
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Closed Event State Notice */}
+          {eventStatus === 'closed' && (
+            <div className="bg-slate-100/90 border border-slate-200/80 rounded-2xl p-5 text-center space-y-2 shadow-inner mt-3">
+              <div className="text-[10px] font-black tracking-widest text-slate-500 uppercase bg-slate-200/70 px-3 py-0.5 rounded-full inline-block">
+                Notice
+              </div>
+              <h2 className="text-base font-extrabold text-slate-800">🛑 フィードバック受付は終了しました</h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                本イベントのポスターフィードバック新規登録・編集の受付は終了いたしました。
+              </p>
+            </div>
+          )}
+
+          {/* Active Event Scan & Poster Entry Card */}
+          {eventStatus === 'active' && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm space-y-4">
+              <p className="text-indigo-950 text-sm leading-relaxed font-extrabold">
+                📱 ポスターのQRコード読取り、または<br />ポスター番号の直接入力で画面が開きます。
+              </p>
+
+              {!isScanning ? (
                 <button
-                  onClick={() => setIsScanning(false)}
-                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.95] w-full"
+                  onClick={() => setIsScanning(true)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-5 rounded-xl transition-all duration-300 active:scale-[0.97] shadow-md shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
                 >
-                  キャンセル
+                  <span>📷</span> カメラを起動してQRコードを読み取る
                 </button>
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                  <QRScanner
-                    onScanSuccess={handlePosterScanSuccess}
-                    onScanFailure={() => { }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {!isScanning && (
-              <div className="pt-2 border-t border-indigo-100/80 space-y-3">
-                <div className="relative flex py-0.5 items-center">
-                  <div className="flex-grow border-t border-indigo-200/60"></div>
-                  <span className="flex-shrink mx-3 text-[11px] font-extrabold text-indigo-400 uppercase tracking-wider">または</span>
-                  <div className="flex-grow border-t border-indigo-200/60"></div>
-                </div>
-
-                <form onSubmit={handleManualPosterSubmit} className="space-y-2 text-left">
-                  <label className="block text-xs font-extrabold text-indigo-950">
-                    🔢 ポスター番号を直接入力
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={posterNumberInput}
-                      onChange={(e) => {
-                        setPosterNumberInput(e.target.value);
-                        setInputError(null);
-                      }}
-                      placeholder="例: 1, 12"
-                      className="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white shadow-inner"
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setIsScanning(false)}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.95] w-full"
+                  >
+                    キャンセル
+                  </button>
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <QRScanner
+                      onScanSuccess={handlePosterScanSuccess}
+                      onScanFailure={() => { }}
                     />
-                    <button
-                      type="submit"
-                      disabled={isCheckingPoster}
-                      className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] text-white font-extrabold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center shrink-0 disabled:opacity-50"
-                    >
-                      {isCheckingPoster ? '確認中...' : '開く ➔'}
-                    </button>
                   </div>
-                  {inputError && (
-                    <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 bg-rose-50 p-2 rounded-lg border border-rose-100">
-                      ⚠️ {inputError}
-                    </p>
-                  )}
-                </form>
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+
+              {!isScanning && (
+                <div className="pt-2 border-t border-indigo-100/80 space-y-3">
+                  <div className="relative flex py-0.5 items-center">
+                    <div className="flex-grow border-t border-indigo-200/60"></div>
+                    <span className="flex-shrink mx-3 text-[11px] font-extrabold text-indigo-400 uppercase tracking-wider">または</span>
+                    <div className="flex-grow border-t border-indigo-200/60"></div>
+                  </div>
+
+                  <form onSubmit={handleManualPosterSubmit} className="space-y-2 text-left">
+                    <label className="block text-xs font-extrabold text-indigo-950">
+                      🔢 ポスター番号を直接入力
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={posterNumberInput}
+                        onChange={(e) => {
+                          setPosterNumberInput(e.target.value);
+                          setInputError(null);
+                        }}
+                        placeholder="例: 1, 12"
+                        className="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white shadow-inner"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isCheckingPoster}
+                        className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] text-white font-extrabold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center shrink-0 disabled:opacity-50"
+                      >
+                        {isCheckingPoster ? '確認中...' : '開く ➔'}
+                      </button>
+                    </div>
+                    {inputError && (
+                      <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 bg-rose-50 p-2 rounded-lg border border-rose-100">
+                        ⚠️ {inputError}
+                      </p>
+                    )}
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {isLoading ? (
+        {/* Private state disables lower actions */}
+        {eventStatus === 'private' ? null : isLoading ? (
           <div className="py-8 text-slate-400 text-sm font-semibold flex items-center justify-center gap-2">
             <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
             読み込み中...
           </div>
         ) : userId && participant ? (
-          /* Registered State */
+          /* Registered State (Available in active & closed) */
           <div className="space-y-6 animate-fade-in">
             <div className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 border border-emerald-100/80 rounded-2xl p-5 shadow-inner">
               <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">現在のログイン参加者</p>
@@ -311,20 +351,7 @@ function HomeContent() {
               >
                 📊 マイページ
               </Link>
-              {/*
-              <div className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
-                ポスターのQRコードをスキャンすると、<br />自動で興味・フィードバックの登録画面が開きます。
-              </div>
-              */}
               <div className="flex flex-col items-center gap-3 pt-4">
-                {/* 復活させる可能性があるため、一時的に非表示にします
-                <Link
-                  href={`/${eventId}/register`}
-                  className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline"
-                >
-                  別の申込番号で登録し直す 🔄
-                </Link>
-                */}
                 <button
                   onClick={handleClearRegistration}
                   className="text-slate-400 hover:text-slate-600 text-xs font-bold hover:underline flex flex-col items-center gap-1"
@@ -336,21 +363,23 @@ function HomeContent() {
             </div>
           </div>
         ) : (
-          /* Unregistered Onboarding State */
-          <div className="space-y-6 animate-fade-in">
-            <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/80 rounded-2xl p-6 shadow-inner">
-              <p className="text-slate-800 font-bold leading-relaxed text-sm">
-                フィードバックを登録するには、まずはじめにご自身の参加者登録を行ってください。
-              </p>
-            </div>
+          /* Unregistered Onboarding State (Only in active) */
+          eventStatus === 'active' && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/80 rounded-2xl p-6 shadow-inner">
+                <p className="text-slate-800 font-bold leading-relaxed text-sm">
+                  フィードバックを登録するには、まずはじめにご自身の参加者登録を行ってください。
+                </p>
+              </div>
 
-            <Link
-              href={`/${eventId}/register`}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-md tracking-wider flex items-center justify-center gap-2"
-            >
-              参加者登録を開始する 🚀
-            </Link>
-          </div>
+              <Link
+                href={`/${eventId}/register`}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-lg shadow-blue-500/25 text-md tracking-wider flex items-center justify-center gap-2"
+              >
+                参加者登録を開始する 🚀
+              </Link>
+            </div>
+          )
         )}
 
       </div>

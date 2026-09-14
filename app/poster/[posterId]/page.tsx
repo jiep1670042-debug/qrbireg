@@ -14,7 +14,7 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [posterTitle, setPosterTitle] = useState<string | null>(null);
-  const [isEventActive, setIsEventActive] = useState<boolean>(true);
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
 
   useEffect(() => {
     const storedUserId = localStorage.getItem(`userId_${eventId}`);
@@ -25,12 +25,16 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
         // Fetch event status
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('is_active')
+          .select('is_active, event_status')
           .eq('id', eventId)
           .single();
 
         if (!eventError && eventData) {
-          setIsEventActive(eventData.is_active !== false); // default to true if null
+          if (eventData.event_status) {
+            setEventStatus(eventData.event_status as any);
+          } else {
+            setEventStatus(eventData.is_active !== false ? 'active' : 'private');
+          }
         }
 
         // Fetch poster status
@@ -68,20 +72,18 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
     );
   }
 
-  if (!isEventActive) {
+  if (eventStatus === 'private') {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-7 border border-white/70">
-          <div className="w-20 h-20 bg-amber-50 text-amber-500 border border-amber-100/50 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+        <div className="max-w-md w-full glass-panel shadow-2xl shadow-amber-900/5 rounded-3xl p-8 space-y-7 border border-amber-100">
+          <div className="w-20 h-20 bg-amber-50 text-amber-500 border border-amber-100 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            🔒
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-black text-slate-800">イベントは終了しました</h1>
+            <h1 className="text-2xl font-black text-slate-800">このイベントは非公開です</h1>
             <p className="text-slate-500 text-sm leading-relaxed">
-              このイベントは現在非公開に設定されているか、すでに会期を終了しているため、フィードバックの登録は行えません。
+              現在、このイベントは準備中または非公開に設定されています。フィードバックの登録および閲覧は行えません。
             </p>
           </div>
 
@@ -91,6 +93,42 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
           >
             トップに戻る
           </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (eventStatus === 'closed') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-7 border border-white/70">
+          <div className="w-20 h-20 bg-slate-100 text-slate-600 border border-slate-200/80 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            🛑
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-800">フィードバック受付は終了しました</h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              本イベントのフィードバック受付期間は終了いたしました。新たな入力や修正は行えません。
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            {userId && (
+              <button
+                onClick={() => router.push(`/${eventId}/my-dashboard`)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] text-sm shadow-md"
+              >
+                📊 マイページで履歴を確認する
+              </button>
+            )}
+            <button
+              onClick={() => router.push(`/${eventId}`)}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] text-sm border border-slate-200"
+            >
+              トップに戻る
+            </button>
+          </div>
         </div>
       </main>
     );

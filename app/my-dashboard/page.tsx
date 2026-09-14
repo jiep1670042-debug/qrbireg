@@ -64,6 +64,8 @@ function MyDashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
+
   useEffect(() => {
     // 1. Fetch userId from localStorage
     const savedUserId = localStorage.getItem(`userId_${eventId}`);
@@ -126,10 +128,10 @@ function MyDashboardContent() {
         if (intError) throw intError;
         setInterests((intData as any) || []);
 
-        // Fetch max_votes and voting_status from events
+        // Fetch max_votes, voting_status, and event_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, voting_status, enable_voting, voting_description')
+          .select('max_votes, voting_status, enable_voting, voting_description, is_active, event_status')
           .eq('id', eventId)
           .single();
         if (!eventError && eventData) {
@@ -137,6 +139,11 @@ function MyDashboardContent() {
           setVotingStatus(eventData.voting_status || 'not_started');
           setEnableVoting(eventData.enable_voting !== false);
           setVotingDescription(eventData.voting_description || '発表内容や発表技術を加味して、最も優れた発表と判断するもの');
+          if (eventData.event_status) {
+            setEventStatus(eventData.event_status as any);
+          } else {
+            setEventStatus(eventData.is_active !== false ? 'active' : 'private');
+          }
         }
 
         // Fetch user's votes
@@ -205,7 +212,30 @@ function MyDashboardContent() {
     );
   }
 
-  // 2. Unregistered State
+  // 2. Private Event State
+  if (eventStatus === 'private') {
+    return (
+      <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 text-center space-y-6 border border-amber-100">
+          <div className="w-20 h-20 bg-amber-50 text-amber-500 border border-amber-100 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            🔒
+          </div>
+          <h2 className="text-2xl font-black text-slate-800">このイベントは非公開です</h2>
+          <p className="text-slate-500 text-sm font-medium leading-relaxed">
+            現在、このイベントは準備中または非公開に設定されているため、マイページは閲覧できません。
+          </p>
+          <button
+            onClick={() => router.push(`/${eventId}`)}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] text-sm border border-slate-200"
+          >
+            トップに戻る
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // 3. Unregistered State
   if (!userId) {
     return (
       <main className="min-h-screen p-4 md:p-8 flex items-center justify-center">

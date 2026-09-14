@@ -15,10 +15,34 @@ function RegisterContent() {
   const [idPart1, setIdPart1] = useState('');
   const [idPart2, setIdPart2] = useState('');
   const part2Ref = useRef<HTMLInputElement>(null);
-  const [statusMsg, setStatusMsg] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const [confirmingParticipant, setConfirmingParticipant] = useState<{ id: string; last_name: string; first_name: string; company?: string; affiliation?: string } | null>(null);
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
+  const [isEventChecked, setIsEventChecked] = useState(false);
+
+  useEffect(() => {
+    const fetchEventStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('is_active, event_status')
+          .eq('id', eventId)
+          .single();
+
+        if (!error && data) {
+          if (data.event_status) {
+            setEventStatus(data.event_status as any);
+          } else {
+            setEventStatus(data.is_active !== false ? 'active' : 'private');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch event status on register page:', err);
+      } finally {
+        setIsEventChecked(true);
+      }
+    };
+
+    fetchEventStatus();
+  }, [eventId]);
 
   const handleRegister = async (id: string) => {
     if (!id.trim()) {
@@ -93,6 +117,36 @@ function RegisterContent() {
     e.preventDefault();
     handleRegister(`${idPart1}-${idPart2}`);
   };
+
+  if (isEventChecked && eventStatus !== 'active') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 space-y-7 border border-slate-200">
+          <div className="w-20 h-20 bg-slate-100 text-slate-500 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            {eventStatus === 'private' ? '🔒' : '🛑'}
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-800">
+              {eventStatus === 'private' ? 'このイベントは非公開です' : '参加者登録の受付は終了しました'}
+            </h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              {eventStatus === 'private'
+                ? '現在、このイベントは準備中または非公開に設定されているため、参加者登録は行えません。'
+                : '本イベントの参加者登録の受付期間は終了いたしました。'}
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push(`/${eventId}`)}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 text-sm border border-slate-200"
+          >
+            トップに戻る
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (isSuccess && confirmingParticipant) {
     return (

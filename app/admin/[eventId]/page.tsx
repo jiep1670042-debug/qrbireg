@@ -25,6 +25,7 @@ interface EventInfo {
   id: string;
   name: string;
   is_active: boolean;
+  event_status?: 'private' | 'active' | 'closed';
   max_votes?: number;
   voting_status?: string;
   enable_voting?: boolean;
@@ -351,21 +352,27 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     }
   };
 
-  // Event publish/active toggle
-  const handleToggleActive = async () => {
+  // Event 3-state status update (private / active / closed)
+  const handleUpdateEventStatus = async (newStatus: 'private' | 'active' | 'closed') => {
     if (!event) return;
-    const newStatus = !event.is_active;
     try {
+      const isAct = newStatus === 'active';
       const { error } = await supabase
         .from('events')
-        .update({ is_active: newStatus })
+        .update({ event_status: newStatus, is_active: isAct })
         .eq('id', eventId);
       
       if (error) throw error;
-      setEvent({ ...event, is_active: newStatus });
+      setEvent({ ...event, event_status: newStatus, is_active: isAct });
+      const labelMap = {
+        private: '🔒 非公開',
+        active: '🟢 公開（受付中）',
+        closed: '🛑 公開（受付終了）'
+      };
+      alert(`イベントステータスを「${labelMap[newStatus]}」に変更しました。`);
     } catch (err: any) {
-      console.error('Failed to update event status:', err);
-      alert('公開ステータスの更新に失敗しました: ' + err.message);
+      console.error('Failed to update event_status:', err);
+      alert('イベントステータスの更新に失敗しました: ' + err.message);
     }
   };
 
@@ -1016,20 +1023,18 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     Event ID: {eventId}
                   </div>
                   
-                  {/* Event active/inactive switch */}
-                  <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100/55">
-                    <span className="text-[10px] font-extrabold text-slate-500">公開設定:</span>
-                    <button
-                      onClick={handleToggleActive}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${event?.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                  {/* Event status 3-state selector */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200/60 shadow-inner text-xs">
+                    <span className="text-[10px] font-extrabold text-slate-500">ステータス:</span>
+                    <select
+                      value={event?.event_status || (event?.is_active ? 'active' : 'private')}
+                      onChange={(e) => handleUpdateEventStatus(e.target.value as 'private' | 'active' | 'closed')}
+                      className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-black text-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-blue-100 shadow-sm"
                     >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${event?.is_active ? 'translate-x-4' : 'translate-x-0'}`}
-                      />
-                    </button>
-                    <span className={`text-[10px] font-black ${event?.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      {event?.is_active ? '公開中（アクティブ）' : '非公開（非アクティブ）'}
-                    </span>
+                      <option value="private">🔒 非公開</option>
+                      <option value="active">🟢 公開（受付中）</option>
+                      <option value="closed">🛑 公開（受付終了）</option>
+                    </select>
                   </div>
 
                   {/* Enable voting configuration */}
