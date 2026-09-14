@@ -59,7 +59,7 @@ function RegisterContent() {
 
       setTimeout(() => {
         router.push(redirect);
-      }, 1500);
+      }, 2000);
     } catch (error) {
       console.error('Failed to save userId', error);
       setStatusMsg('登録に失敗しました');
@@ -93,6 +93,49 @@ function RegisterContent() {
     e.preventDefault();
     handleRegister(`${idPart1}-${idPart2}`);
   };
+
+  if (isSuccess && confirmingParticipant) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl shadow-emerald-900/10 rounded-3xl p-8 space-y-6 border border-emerald-100/80 animate-fade-in">
+          
+          {/* Animated Success Check Icon */}
+          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 border border-emerald-200/80 rounded-full flex items-center justify-center mx-auto shadow-inner animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-xs font-extrabold tracking-widest text-emerald-600 uppercase bg-emerald-50 px-3.5 py-1 rounded-full border border-emerald-200/60 inline-block">
+              Registration Completed
+            </span>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight pt-1">
+              参加者登録が完了しました！
+            </h1>
+          </div>
+
+          <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/80 border border-emerald-100 p-6 rounded-2xl space-y-2 text-center shadow-inner">
+            <p className="text-xs text-slate-400 font-mono font-bold tracking-wider">申込番号: {confirmingParticipant.id}</p>
+            <p className="text-2xl font-black text-slate-800">
+              {confirmingParticipant.last_name} {confirmingParticipant.first_name} <span className="text-lg font-medium text-slate-500">様</span>
+            </p>
+            {(confirmingParticipant.company || confirmingParticipant.affiliation) && (
+              <p className="text-xs font-bold text-emerald-800/80 pt-1">
+                {[confirmingParticipant.company, confirmingParticipant.affiliation].filter(Boolean).join(' / ')}
+              </p>
+            )}
+          </div>
+
+          <div className="pt-2 text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
+            <div className="w-4 h-4 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"></div>
+            自動的に次の画面へ移動します...
+          </div>
+
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
