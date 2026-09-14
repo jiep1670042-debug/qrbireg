@@ -17,6 +17,10 @@ function RegisterContent() {
   const part2Ref = useRef<HTMLInputElement>(null);
   const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
   const [isEventChecked, setIsEventChecked] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [confirmingParticipant, setConfirmingParticipant] = useState<{ id: string; last_name: string; first_name: string; company?: string; affiliation?: string } | null>(null);
 
   useEffect(() => {
     const fetchEventStatus = async () => {
