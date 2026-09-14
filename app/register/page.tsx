@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEventId } from '@/lib/useEventId';
 import QRScanner from '@/components/QRScanner';
