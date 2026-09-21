@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import AdminLogin from '@/components/AdminLogin';
 
-import { DEFAULT_QA_ITEMS } from '@/app/help/page';
+import { DEFAULT_QA_ITEMS } from '@/lib/qaPresets';
 
 interface Participant {
   id: string;
