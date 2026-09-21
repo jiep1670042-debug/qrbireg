@@ -61,6 +61,7 @@ function MyDashboardContent() {
   const [votingStatus, setVotingStatus] = useState<string>('not_started');
   const [enableVoting, setEnableVoting] = useState<boolean>(true);
   const [votingDescription, setVotingDescription] = useState<string>('');
+  const [presenterEmailShareRule, setPresenterEmailShareRule] = useState<'always' | 'conditional'>('always');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -128,10 +129,10 @@ function MyDashboardContent() {
         if (intError) throw intError;
         setInterests((intData as any) || []);
 
-        // Fetch max_votes, voting_status, and event_status from events
+        // Fetch max_votes, voting_status, presenter_email_share_rule, and event_status from events
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('max_votes, voting_status, enable_voting, voting_description, is_active, event_status')
+          .select('max_votes, voting_status, enable_voting, voting_description, is_active, event_status, presenter_email_share_rule')
           .eq('id', eventId)
           .single();
         if (!eventError && eventData) {
@@ -139,6 +140,9 @@ function MyDashboardContent() {
           setVotingStatus(eventData.voting_status || 'not_started');
           setEnableVoting(eventData.enable_voting !== false);
           setVotingDescription(eventData.voting_description || '発表内容や発表技術を加味して、最も優れた発表と判断するもの');
+          if (eventData.presenter_email_share_rule) {
+            setPresenterEmailShareRule(eventData.presenter_email_share_rule as any);
+          }
           if (eventData.event_status) {
             setEventStatus(eventData.event_status as any);
           } else {
@@ -486,12 +490,18 @@ function MyDashboardContent() {
                           🏢 {presenter.company || '未登録'} {presenter.affiliation}
                         </p>
                         {presenter.email && (
-                          <a
-                            href={`mailto:${presenter.email}`}
-                            className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 mt-1 w-fit"
-                          >
-                            ✉️ {presenter.email}
-                          </a>
+                          presenterEmailShareRule === 'always' || item.contact_allowed ? (
+                            <a
+                              href={`mailto:${presenter.email}`}
+                              className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 mt-1 w-fit"
+                            >
+                              ✉️ {presenter.email}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-slate-400 font-semibold flex items-center gap-1 mt-1">
+                              ✉️ メールアドレス非公開 <span className="text-[10px] text-slate-400 font-normal">(連絡先共有を許可すると表示されます)</span>
+                            </p>
+                          )
                         )}
                       </div>
                     ) : (

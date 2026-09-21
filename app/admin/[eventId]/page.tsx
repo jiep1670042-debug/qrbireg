@@ -32,6 +32,7 @@ interface EventInfo {
   voting_status?: string;
   enable_voting?: boolean;
   voting_description?: string;
+  presenter_email_share_rule?: 'always' | 'conditional';
 }
 
 interface QAAdminItem {
@@ -547,6 +548,25 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     } catch (err: any) {
       console.error('Failed to update event voting status:', err);
       alert('投票ステータスの更新に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleUpdatePresenterEmailShareRule = async (newRule: 'always' | 'conditional') => {
+    if (!event) return;
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ presenter_email_share_rule: newRule })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      setEvent({ ...event, presenter_email_share_rule: newRule });
+      const ruleLabel = newRule === 'always' ? '常に公開（連絡先共有の有無に関わらず表示）' : '参加者が連絡先を共有した場合のみ公開';
+      alert(`発表者メールアドレスの開示条件を「${ruleLabel}」に変更しました。`);
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update presenter_email_share_rule:', err);
+      alert('発表者メール開示条件の更新に失敗しました: ' + err.message);
     }
   };
 
@@ -1171,6 +1191,19 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                       <option value="private">🔒 非公開</option>
                       <option value="active">🟢 公開（受付中）</option>
                       <option value="closed">🛑 公開（受付終了）</option>
+                    </select>
+                  </div>
+
+                  {/* Presenter Email Share Rule configuration */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200/60 shadow-inner text-xs">
+                    <span className="text-[10px] font-extrabold text-slate-500">📧 発表者メール開示条件:</span>
+                    <select
+                      value={event?.presenter_email_share_rule || 'always'}
+                      onChange={(e) => handleUpdatePresenterEmailShareRule(e.target.value as 'always' | 'conditional')}
+                      className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-black text-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-blue-100 shadow-sm"
+                    >
+                      <option value="always">常に公開 (デフォルト)</option>
+                      <option value="conditional">参加者が連絡先を共有した場合のみ公開</option>
                     </select>
                   </div>
 
