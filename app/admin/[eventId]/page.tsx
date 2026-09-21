@@ -69,6 +69,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [interests, setInterests] = useState<Interest[]>([]);
   const [votes, setVotes] = useState<AdminVote[]>([]);
   const [posters, setPosters] = useState<Poster[]>([]);
   const [qaItems, setQaItems] = useState<QAAdminItem[]>([]);
