@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEventId } from '@/lib/useEventId';
+import { supabase } from '@/lib/supabase';
 import { DEFAULT_QA_ITEMS, QAItem } from '@/lib/qaPresets';
 
 function HelpContent() {
