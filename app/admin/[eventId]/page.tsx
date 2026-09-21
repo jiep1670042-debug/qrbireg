@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import AdminLogin from '@/components/AdminLogin';
 
+import { DEFAULT_QA_ITEMS } from '@/app/help/page';
+
 interface Participant {
   id: string;
   last_name: string;
@@ -30,6 +32,16 @@ interface EventInfo {
   voting_status?: string;
   enable_voting?: boolean;
   voting_description?: string;
+}
+
+interface QAAdminItem {
+  id: number;
+  event_id: string;
+  target: 'participant' | 'presenter';
+  category: string;
+  question: string;
+  answer: string;
+  sort_order: number;
 }
 
 interface Interest {
@@ -59,13 +71,23 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [votes, setVotes] = useState<AdminVote[]>([]);
   const [posters, setPosters] = useState<Poster[]>([]);
-  const [interests, setInterests] = useState<Interest[]>([]);
-  const [qrLayout, setQrLayout] = useState<'1-portrait' | '2-landscape' | '4-portrait' | '6-portrait'>('1-portrait');
-  const [selectedPosterIds, setSelectedPosterIds] = useState<Set<number>>(new Set());
-  
-  const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr'>('stats');
+  const [qaItems, setQaItems] = useState<QAAdminItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr' | 'qa'>('stats');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Q&A Management States
+  const [newQATarget, setNewQATarget] = useState<'participant' | 'presenter'>('participant');
+  const [newQACategory, setNewQACategory] = useState('基本操作');
+  const [newQAQuestion, setNewQAQuestion] = useState('');
+  const [newQAAnswer, setNewQAAnswer] = useState('');
+  const [isAddingQA, setIsAddingQA] = useState(false);
+
+  const [editingQAId, setEditingQAId] = useState<number | null>(null);
+  const [editingQATarget, setEditingQATarget] = useState<'participant' | 'presenter'>('participant');
+  const [editingQACategory, setEditingQACategory] = useState('');
+  const [editingQAQuestion, setEditingQAQuestion] = useState('');
+  const [editingQAAnswer, setEditingQAAnswer] = useState('');
 
   const chunkArray = <T,>(array: T[], size: number): T[][] => {
     const result: T[][] = [];
@@ -344,11 +366,123 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       if (voteError) throw voteError;
       setVotes(voteData || []);
 
+      // 6. Fetch QA Items
+      const { data: qaData, error: qaError } = await supabase
+        .from('qa_items')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('sort_order', { ascending: true })
+        .order('id', { ascending: true });
+
+      if (!qaError && qaData) {
+        setQaItems(qaData || []);
+      }
+
     } catch (err: any) {
       console.error('Failed to load event dashboard data:', err);
       setErrorMsg(err.message || 'データロードに失敗しました。');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Q&A CRUD Handlers
+  const handleSeedQA = async () => {
+    if (!confirm('標準のQ&Aプリセット（一般参加者向け＆発表者向け）を一括登録しますか？')) return;
+    setIsLoading(true);
+    try {
+      const rowsToInsert = DEFAULT_QA_ITEMS.map((item) => ({
+        ...item,
+        event_id: eventId
+      }));
+
+      const { error } = await supabase.from('qa_items').insert(rowsToInsert);
+      if (error) throw error;
+
+      alert('標準Q&Aセットを一括登録しました！');
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to seed QA items:', err);
+      alert('Q&A一括登録に失敗しました: ' + err.message);
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddQA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQAQuestion.trim() || !newQAAnswer.trim()) {
+      alert('質問と回答の両方を入力してください。');
+      return;
+    }
+
+    setIsAddingQA(true);
+    try {
+      const { error } = await supabase.from('qa_items').insert([{
+        event_id: eventId,
+        target: newQATarget,
+        category: newQACategory.trim() || 'その他',
+        question: newQAQuestion.trim(),
+        answer: newQAAnswer.trim(),
+        sort_order: (qaItems.length + 1) * 10
+      }]);
+
+      if (error) throw error;
+      setNewQAQuestion('');
+      setNewQAAnswer('');
+      alert('新しいQ&Aを追加しました。');
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to add QA item:', err);
+      alert('Q&A追加に失敗しました: ' + err.message);
+    } finally {
+      setIsAddingQA(false);
+    }
+  };
+
+  const handleStartEditQA = (item: QAAdminItem) => {
+    setEditingQAId(item.id);
+    setEditingQATarget(item.target);
+    setEditingQACategory(item.category);
+    setEditingQAQuestion(item.question);
+    setEditingQAAnswer(item.answer);
+  };
+
+  const handleSaveEditQA = async (id: number) => {
+    if (!editingQAQuestion.trim() || !editingQAAnswer.trim()) {
+      alert('質問と回答の両方を入力してください。');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('qa_items')
+        .update({
+          target: editingQATarget,
+          category: editingQACategory.trim(),
+          question: editingQAQuestion.trim(),
+          answer: editingQAAnswer.trim()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      setEditingQAId(null);
+      alert('Q&Aを更新しました。');
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to update QA item:', err);
+      alert('Q&A更新に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleDeleteQA = async (id: number, questionStr: string) => {
+    if (!confirm(`Q&A「${questionStr.slice(0, 20)}...」を削除しますか？`)) return;
+    try {
+      const { error } = await supabase.from('qa_items').delete().eq('id', id);
+      if (error) throw error;
+      loadEventData();
+    } catch (err: any) {
+      console.error('Failed to delete QA item:', err);
+      alert('Q&A削除に失敗しました: ' + err.message);
     }
   };
 
@@ -1137,6 +1271,12 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
               >
                 🖨️ QR印刷シート
               </button>
+              <button
+                onClick={() => setActiveTab('qa')}
+                className={`py-2.5 px-4 font-bold text-sm transition-all border-b-2 outline-none ${activeTab === 'qa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                ❓ Q&A管理 ({qaItems.length})
+              </button>
             </div>
           </header>
 
@@ -1923,6 +2063,193 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 5: Q&A Management */}
+              {activeTab === 'qa' && (
+                <div className="space-y-6 animate-fade-in text-left">
+                  <div className="glass-panel p-6 rounded-3xl border border-white/70 shadow-lg space-y-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
+                      <div className="space-y-1">
+                        <h2 className="text-xl font-black text-slate-800">❓ よくある質問 (Q&A) の登録・編集</h2>
+                        <p className="text-xs text-slate-500 font-medium">
+                          一般参加者画面および発表者画面の「Q&A・ヘルプ」ページに表示される項目を登録・更新できます。
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleSeedQA}
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold py-3 px-5 rounded-2xl transition-all duration-300 active:scale-[0.97] text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 shrink-0"
+                      >
+                        <span>🌱</span> 標準Q&Aセットを一括登録
+                      </button>
+                    </div>
+
+                    {/* Add New Q&A Form */}
+                    <form onSubmit={handleAddQA} className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/70 space-y-4 shadow-inner">
+                      <span className="text-xs font-black text-blue-600 uppercase tracking-wider block">＋ 新しいQ&Aを追加</span>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">対象区分</label>
+                          <select
+                            value={newQATarget}
+                            onChange={(e) => setNewQATarget(e.target.value as any)}
+                            className="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-bold bg-white text-slate-800"
+                          >
+                            <option value="participant">👤 一般参加者向け</option>
+                            <option value="presenter">🎤 ポスター発表者向け</option>
+                          </select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-slate-600 mb-1">カテゴリ名</label>
+                          <input
+                            type="text"
+                            value={newQACategory}
+                            onChange={(e) => setNewQACategory(e.target.value)}
+                            placeholder="例: 基本操作, フィードバック送信, 連絡先共有"
+                            className="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-bold bg-white text-slate-800"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">質問文 (Question)</label>
+                          <input
+                            type="text"
+                            value={newQAQuestion}
+                            onChange={(e) => setNewQAQuestion(e.target.value)}
+                            placeholder="質問文を入力してください"
+                            className="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-bold bg-white text-slate-800"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">回答文 (Answer)</label>
+                          <textarea
+                            rows={3}
+                            value={newQAAnswer}
+                            onChange={(e) => setNewQAAnswer(e.target.value)}
+                            placeholder="回答文を入力してください"
+                            className="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-medium bg-white text-slate-800 resize-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={isAddingQA}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-6 rounded-xl transition-all text-xs shadow-md shadow-blue-500/10 disabled:opacity-50"
+                        >
+                          {isAddingQA ? '保存中...' : 'Q&Aを追加する ➔'}
+                        </button>
+                      </div>
+                    </form>
+
+                    {/* Q&A List */}
+                    <div className="space-y-4 pt-4">
+                      <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                        <span>📋 登録済みQ&A一覧</span>
+                        <span className="text-xs text-slate-400 font-normal">({qaItems.length}件)</span>
+                      </h3>
+
+                      {qaItems.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          登録されているQ&Aがありません。上の「標準Q&Aセットを一括登録」ボタンを押すか、フォームから追加してください。
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {qaItems.map((item) => {
+                            const isEditing = editingQAId === item.id;
+                            return (
+                              <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                                {isEditing ? (
+                                  <div className="space-y-3 p-2 bg-blue-50/40 rounded-xl border border-blue-100">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <select
+                                        value={editingQATarget}
+                                        onChange={(e) => setEditingQATarget(e.target.value as any)}
+                                        className="rounded-lg border border-slate-300 p-2 text-xs font-bold bg-white"
+                                      >
+                                        <option value="participant">👤 一般参加者向け</option>
+                                        <option value="presenter">🎤 ポスター発表者向け</option>
+                                      </select>
+                                      <input
+                                        type="text"
+                                        value={editingQACategory}
+                                        onChange={(e) => setEditingQACategory(e.target.value)}
+                                        className="rounded-lg border border-slate-300 p-2 text-xs font-bold bg-white"
+                                      />
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={editingQAQuestion}
+                                      onChange={(e) => setEditingQAQuestion(e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 p-2 text-xs font-bold bg-white"
+                                    />
+                                    <textarea
+                                      rows={3}
+                                      value={editingQAAnswer}
+                                      onChange={(e) => setEditingQAAnswer(e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 p-2 text-xs bg-white resize-none"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        onClick={() => setEditingQAId(null)}
+                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-1.5 rounded-lg text-xs"
+                                      >
+                                        キャンセル
+                                      </button>
+                                      <button
+                                        onClick={() => handleSaveEditQA(item.id)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-1.5 rounded-lg text-xs shadow-sm"
+                                      >
+                                        保存
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                                    <div className="space-y-1.5 flex-1">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${item.target === 'participant' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'}`}>
+                                          {item.target === 'participant' ? '👤 一般向け' : '🎤 発表者向け'}
+                                        </span>
+                                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">
+                                          {item.category}
+                                        </span>
+                                      </div>
+                                      <h4 className="font-extrabold text-slate-800 text-xs md:text-sm">
+                                        Q. {item.question}
+                                      </h4>
+                                      <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap pl-3 border-l-2 border-slate-200">
+                                        {item.answer}
+                                      </p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
+                                      <button
+                                        onClick={() => handleStartEditQA(item)}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                                      >
+                                        編集 ✏️
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteQA(item.id, item.question)}
+                                        className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors"
+                                      >
+                                        削除 🗑️
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

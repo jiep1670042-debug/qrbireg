@@ -88,14 +88,14 @@ function HomeContent() {
     let confirmMsg = '';
     if (eventStatus === 'closed') {
       confirmMsg =
-        '⚠️ 【重要】この端末の登録（ログイン状態）を解除しますか？\n\n' +
+        '⚠️ 【重要】この端末の参加登録（ログイン状態）を解除しますか？\n\n' +
         '・現在フィードバック受付が終了しているため、解除するとこの端末から再ログインすることはできなくなります（マイページや履歴の閲覧もできなくなります）。\n' +
         '・送信済みのフィードバックデータ自体は保存されています。\n' +
         '・必要に応じて、解除前にマイページからフィードバック履歴（CSV）をダウンロードしてください。\n\n' +
         '本当に登録を解除しますか？';
     } else {
       confirmMsg =
-        'この端末の登録（ログイン状態）を解除しますか？\n\n' +
+        'この端末の参加登録（ログイン状態）を解除しますか？\n\n' +
         '・送信済みのフィードバックデータは削除されずに残ります。\n' +
         '・フィードバック受付期間中は再ログインが可能ですが、受付終了後は再ログインできなくなりますのでご注意ください。\n' +
         '・必要に応じて、解除前にマイページからフィードバック履歴（CSV）をダウンロードしてください。\n\n' +
@@ -188,30 +188,30 @@ function HomeContent() {
         <div className="mx-auto w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-blue-500/30 border border-white/20 p-1.5 gap-0.5 animate-pulse">
           <svg className="w-10 h-10 text-white drop-shadow-sm shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Top-Left Finder */}
-            <rect x="2" y="2" width="7" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <rect x="4" y="4" width="3" height="3" rx="0.5" fill="currentColor"/>
-            
+            <rect x="2" y="2" width="7" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <rect x="4" y="4" width="3" height="3" rx="0.5" fill="currentColor" />
+
             {/* Top-Right Finder */}
-            <rect x="15" y="2" width="7" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <rect x="17" y="4" width="3" height="3" rx="0.5" fill="currentColor"/>
-            
+            <rect x="15" y="2" width="7" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <rect x="17" y="4" width="3" height="3" rx="0.5" fill="currentColor" />
+
             {/* Bottom-Left Finder */}
-            <rect x="2" y="15" width="7" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <rect x="4" y="17" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="2" y="15" width="7" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <rect x="4" y="17" width="3" height="3" rx="0.5" fill="currentColor" />
 
             {/* Simple Low-Res Data Blocks */}
-            <rect x="11.5" y="3" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="11.5" y="7" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="3" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="7" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="11.5" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="15.5" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="19.5" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="11.5" y="15.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="15.5" y="15.5" width="5.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="11.5" y="19.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="15.5" y="19.5" width="1.8" height="1.8" rx="0.3" fill="currentColor"/>
-            <rect x="19.5" y="19.5" width="2.8" height="1.8" rx="0.3" fill="currentColor"/>
+            <rect x="11.5" y="3" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="11.5" y="7" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="3" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="7" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="11.5" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="15.5" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="19.5" y="11.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="11.5" y="15.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="15.5" y="15.5" width="5.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="11.5" y="19.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="15.5" y="19.5" width="1.8" height="1.8" rx="0.3" fill="currentColor" />
+            <rect x="19.5" y="19.5" width="2.8" height="1.8" rx="0.3" fill="currentColor" />
           </svg>
           <span className="text-[11px] font-mono font-bold tracking-tight text-white leading-none shrink-0">
             Session<span className="text-cyan-300 font-mono font-extrabold text-xs ml-0.5">+</span>
@@ -236,6 +236,14 @@ function HomeContent() {
           <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
             このシステムは、参加者が興味レベル・関心・コメントを<br />発表者に直接届けるためのものです。
           </p>
+          <div className="pt-1">
+            <Link
+              href={`/${eventId}/help`}
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-blue-600 bg-white hover:bg-blue-50/60 border border-slate-200/80 px-4 py-2 rounded-xl shadow-sm transition-all duration-200 active:scale-[0.97]"
+            >
+              <span>❓</span> よくある質問 (Q&A) はこちら
+            </Link>
+          </div>
 
           {/* Private Event State */}
           {eventStatus === 'private' && (

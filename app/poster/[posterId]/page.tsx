@@ -171,13 +171,19 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
               href={`/${eventId}`}
               className="text-xs font-bold text-slate-700 hover:text-slate-800 transition-colors flex items-center gap-1 bg-white hover:bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shadow-sm transition-all duration-300 active:scale-[0.97]"
             >
-              ← トップに戻る
+              ← トップ
             </Link>
             <Link
               href={`/${eventId}/my-dashboard`}
               className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 bg-blue-50/50 hover:bg-blue-100/50 px-3 py-2 rounded-xl border border-blue-100/40"
             >
               📊 マイページ
+            </Link>
+            <Link
+              href={`/${eventId}/help`}
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50/50 hover:bg-indigo-100/50 px-3 py-2 rounded-xl border border-indigo-100/40"
+            >
+              ❓ Q&A
             </Link>
           </div>
           <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-black tracking-widest px-3.5 py-2 rounded-full shadow-sm shadow-blue-500/10 uppercase">

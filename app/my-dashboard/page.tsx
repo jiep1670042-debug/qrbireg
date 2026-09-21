@@ -304,6 +304,12 @@ function MyDashboardContent() {
                 />
               )}
               <Link
+                href={`/${eventId}/help`}
+                className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
+              >
+                ❓ Q&A・ヘルプ
+              </Link>
+              <Link
                 href={`/${eventId}`}
                 className="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-100 shadow-sm text-xs transition-colors active:scale-[0.97]"
               >
