@@ -73,6 +73,8 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [posters, setPosters] = useState<Poster[]>([]);
   const [qaItems, setQaItems] = useState<QAAdminItem[]>([]);
   const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr' | 'qa'>('stats');
+  const [qrLayout, setQrLayout] = useState<'1-portrait' | '2-landscape' | '4-portrait' | '6-portrait'>('1-portrait');
+  const [selectedPosterIds, setSelectedPosterIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
