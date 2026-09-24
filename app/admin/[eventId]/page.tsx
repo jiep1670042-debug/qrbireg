@@ -674,37 +674,73 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
 
       try {
         if (type === 'participants') {
-          const rows = parsedData.map(row => ({
-            id: row.id || '',
-            event_id: eventId,
-            last_name: row.last_name || '',
-            first_name: row.first_name || '',
-            company: row.company || '',
-            affiliation: row.affiliation || '',
-            email: row.email || ''
-          }));
+          const validRows = parsedData
+            .filter(row => row.id && String(row.id).trim() !== '')
+            .map(row => ({
+              id: String(row.id).trim(),
+              event_id: eventId,
+              last_name: row.last_name ? String(row.last_name).trim() : '',
+              first_name: row.first_name ? String(row.first_name).trim() : '',
+              company: row.company ? String(row.company).trim() : '',
+              affiliation: row.affiliation ? String(row.affiliation).trim() : '',
+              email: row.email ? String(row.email).trim() : ''
+            }));
+
+          if (validRows.length === 0) {
+            alert('有効な参加者IDを含むデータが見つかりませんでした。CSVの列名(id, last_name, first_name)をご確認ください。');
+            setIsLoading(false);
+            return;
+          }
+
+          // 重複IDの自動除去（同一IDがCSV内にある場合は後勝勝ちで1件に統合）
+          const uniqueMap = new Map<string, typeof validRows[0]>();
+          validRows.forEach(r => uniqueMap.set(r.id, r));
+          const uniqueRows = Array.from(uniqueMap.values());
 
           const { error } = await supabase
             .from('participants')
-            .upsert(rows, { onConflict: 'event_id,id' });
+            .upsert(uniqueRows, { onConflict: 'event_id,id' });
 
           if (error) throw error;
-          alert(`${rows.length} 名の参加者をインポートしました！`);
+
+          if (uniqueRows.length < parsedData.length) {
+            alert(`${uniqueRows.length} 名の参加者をインポートしました！（重複IDまたは空行 ${parsedData.length - uniqueRows.length} 件を自動除去・調整しました）`);
+          } else {
+            alert(`${uniqueRows.length} 名の参加者をインポートしました！`);
+          }
 
         } else {
-          const rows = parsedData.map(row => ({
-            id: parseInt(row.id, 10) || 0,
-            event_id: eventId,
-            title: row.title || 'タイトル未設定',
-            presenter_id: row.presenter_id || null
-          }));
+          const validRows = parsedData
+            .filter(row => row.id !== undefined && row.id !== '' && !isNaN(parseInt(row.id, 10)))
+            .map(row => ({
+              id: parseInt(row.id, 10),
+              event_id: eventId,
+              title: row.title ? String(row.title).trim() : 'タイトル未設定',
+              presenter_id: row.presenter_id && String(row.presenter_id).trim() !== '' ? String(row.presenter_id).trim() : null
+            }));
+
+          if (validRows.length === 0) {
+            alert('有効なポスターIDを含むデータが見つかりませんでした。CSVの列名(id, title)をご確認ください。');
+            setIsLoading(false);
+            return;
+          }
+
+          // 重複ポスターIDの自動除去
+          const uniqueMap = new Map<number, typeof validRows[0]>();
+          validRows.forEach(r => uniqueMap.set(r.id, r));
+          const uniqueRows = Array.from(uniqueMap.values());
 
           const { error } = await supabase
             .from('posters')
-            .upsert(rows, { onConflict: 'event_id,id' });
+            .upsert(uniqueRows, { onConflict: 'event_id,id' });
 
           if (error) throw error;
-          alert(`${rows.length} 件のポスターをインポートしました！`);
+
+          if (uniqueRows.length < parsedData.length) {
+            alert(`${uniqueRows.length} 件のポスターをインポートしました！（重複IDまたは空行 ${parsedData.length - uniqueRows.length} 件を自動除去・調整しました）`);
+          } else {
+            alert(`${uniqueRows.length} 件のポスターをインポートしました！`);
+          }
         }
 
         loadEventData();
