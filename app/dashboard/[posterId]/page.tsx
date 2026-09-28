@@ -144,10 +144,7 @@ function PresenterDashboardContent({
           <div className="space-y-2">
             <h2 className="text-2xl font-black text-slate-800">アクセス権限がありません</h2>
             <p className="text-slate-500 text-sm font-medium leading-relaxed">
-              この画面を閲覧できるのは、<strong className="text-slate-800 font-extrabold">ポスター No.{posterId}</strong> の担当発表者様（登録ID: {poster?.presenter_id || '未登録'}）としてログイン中の端末のみです。
-            </p>
-            <p className="text-xs text-slate-400 pt-1">
-              現在のログイン端末ID: <code className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold">{currentUserId}</code>
+              この画面を閲覧できるのは、該当ポスターの担当発表者様としてログイン中の端末のみです。
             </p>
           </div>
           <div className="space-y-3 pt-2">
