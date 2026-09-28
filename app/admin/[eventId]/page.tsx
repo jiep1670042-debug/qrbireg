@@ -144,6 +144,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           .print-card-no { font-size: 36pt; font-weight: 900; }
           .print-card-presenter { font-size: 14pt; font-weight: 700; }
           .print-card-qr { width: 6.5cm; height: 6.5cm; }
+          .print-qr-center-text { font-size: 18pt; padding: 4px 12px; border-radius: 8px; border: 1.5px solid #4b5563; background: #ffffff; }
         `;
       case '2-landscape':
         return `
@@ -179,6 +180,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           .print-card-no { font-size: 26pt; font-weight: 900; }
           .print-card-presenter { font-size: 11pt; font-weight: 700; }
           .print-card-qr { width: 4.8cm; height: 4.8cm; }
+          .print-qr-center-text { font-size: 14pt; padding: 3px 9px; border-radius: 6px; border: 1.5px solid #4b5563; background: #ffffff; }
         `;
       case '4-portrait':
         return `
@@ -214,6 +216,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           .print-card-no { font-size: 20pt; font-weight: 900; }
           .print-card-presenter { font-size: 9pt; font-weight: 700; }
           .print-card-qr { width: 3.5cm; height: 3.5cm; }
+          .print-qr-center-text { font-size: 10pt; padding: 2px 7px; border-radius: 5px; border: 1px solid #4b5563; background: #ffffff; }
         `;
       case '6-portrait':
         return `
@@ -249,6 +252,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           .print-card-no { font-size: 16pt; font-weight: 900; }
           .print-card-presenter { font-size: 8pt; font-weight: 700; }
           .print-card-qr { width: 2.8cm; height: 2.8cm; }
+          .print-qr-center-text { font-size: 8pt; padding: 1px 5px; border-radius: 4px; border: 1px solid #4b5563; background: #ffffff; }
         `;
       default:
         return '';
@@ -2119,12 +2123,17 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                                   )}
                                 </div>
                                 {/* QR Code */}
-                                <div className="w-36 h-36 border border-slate-200/80 rounded-xl p-2 bg-white shadow-inner flex items-center justify-center">
+                                <div className="w-36 h-36 border border-slate-200/80 rounded-xl p-2 bg-white shadow-inner flex items-center justify-center relative">
                                   <img
                                     src={qrImgSrc}
                                     alt={`Poster ${p.id} QR Code`}
                                     className="w-full h-full object-contain"
                                   />
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <span className="bg-white/95 text-slate-800 border border-slate-400 rounded-md px-2 py-0.5 text-xs font-black shadow-sm">
+                                      {p.id}
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="text-[9px] text-slate-400 font-bold leading-normal px-2">
                                   📱 スマホのカメラでQRコードを読み取り、<br />興味登録・フィードバックを送信してください。
@@ -2360,12 +2369,17 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                       </span>
                     </div>
                   )}
-                  <div className="print-card-qr-wrapper my-4 flex justify-center items-center">
+                  <div className="print-card-qr-wrapper my-4 flex justify-center items-center relative">
                     <img
                       src={qrImgSrc}
                       alt={`Poster ${p.id} QR Code`}
                       className="print-card-qr mx-auto block"
                     />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="print-qr-center-text font-black shadow-sm">
+                        {p.id}
+                      </span>
+                    </div>
                   </div>
                   <div className="print-card-hint text-[9pt] font-extrabold text-slate-400 leading-relaxed text-center">
                     📱 スマートフォンの標準カメラ等でスキャンすると、<br />自動で興味・フィードバック登録画面が開きます。
