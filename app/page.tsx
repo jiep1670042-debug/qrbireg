@@ -233,7 +233,7 @@ function HomeContent() {
             )
           )}
           <p className="text-xs text-slate-400 font-medium pt-2 leading-relaxed">
-            あなたの興味・関心度、質問・感想・その他メッセージを発表者に届けます。
+            このアプリは、あなたの興味・関心度、質問・感想・その他メッセージを発表者に届けます。
           </p>
           <div className="pt-1">
             <Link
