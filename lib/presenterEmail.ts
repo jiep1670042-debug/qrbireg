@@ -132,7 +132,7 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
   lines.push('■ 詳しくはこちら（ログイン不要の発表者専用ページ、CSVでのダウンロードも可能です。）');
   if (presenterUrl) {
     lines.push(presenterUrl);
-    lines.push('※ このリンクはあなた専用です。他の方と共有しないでください。\n');
+    lines.push('※ このリンクはあなた専用です。他の方と共有しないでください。');
     lines.push('※ このリンクはアプリ内のイベント公開中は有効です。\n');
   } else {
     lines.push('（専用リンクを準備中です）\n');
