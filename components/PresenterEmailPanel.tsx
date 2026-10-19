@@ -186,10 +186,26 @@ export default function PresenterEmailPanel({
     return map;
   }, [posters, interests, participantMap]);
 
+  // 発表者情報を poster.presenter と participantMap の両方から安全にマージするヘルパー
+  const getPosterPresenter = (poster: Poster) => {
+    const fromMap = poster.presenter_id ? participantMap.get(poster.presenter_id) : undefined;
+    const fromPoster = poster.presenter;
+    if (!fromPoster && !fromMap) return undefined;
+
+    return {
+      id: fromPoster?.id || fromMap?.id || poster.presenter_id || '',
+      last_name: fromPoster?.last_name || fromMap?.last_name || '',
+      first_name: fromPoster?.first_name || fromMap?.first_name || '',
+      company: fromPoster?.company || fromMap?.company || '',
+      affiliation: fromPoster?.affiliation || fromMap?.affiliation || '',
+      email: fromPoster?.email || fromMap?.email || '',
+    };
+  };
+
   // フィルタ済みポスター一覧
   const filteredPosters = useMemo(() => {
     return posters.filter(poster => {
-      const p = poster.presenter || (poster.presenter_id ? participantMap.get(poster.presenter_id) : undefined);
+      const p = getPosterPresenter(poster);
       const email = p?.email || '';
       const name = p ? `${p.last_name} ${p.first_name}` : '';
       const fbCount = posterInterestsMap.get(poster.id)?.length || 0;
@@ -236,8 +252,8 @@ export default function PresenterEmailPanel({
     const poster = posters.find(p => p.id === previewPosterId);
     if (!poster) return null;
 
-    const p = poster.presenter || (poster.presenter_id ? participantMap.get(poster.presenter_id) : undefined);
-    const presenterName = p ? `${p.last_name} ${p.first_name}` : 'ご担当者';
+    const p = getPosterPresenter(poster);
+    const presenterName = p && (p.last_name || p.first_name) ? `${p.last_name} ${p.first_name}`.trim() : 'ご担当者';
     const presenterEmail = p?.email || '';
     const token = tokens[poster.id] || '';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -425,7 +441,7 @@ export default function PresenterEmailPanel({
                 </tr>
               ) : (
                 filteredPosters.map(poster => {
-                  const p = poster.presenter || (poster.presenter_id ? participantMap.get(poster.presenter_id) : undefined);
+                  const p = getPosterPresenter(poster);
                   const pInterests = posterInterestsMap.get(poster.id) || [];
                   const fbCount = pInterests.length;
                   const token = tokens[poster.id];

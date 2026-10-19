@@ -335,10 +335,12 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
           title,
           presenter_id,
           presenter:participants (
+            id,
             last_name,
             first_name,
             company,
-            affiliation
+            affiliation,
+            email
           )
         `)
         .eq('event_id', eventId)
