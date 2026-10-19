@@ -16,6 +16,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
     if (password === envPasskey) {
       sessionStorage.setItem('isAdminAuthenticated', 'true');
+      sessionStorage.setItem('adminPasskey', password);
       onLoginSuccess();
     } else {
       setErrorMsg('パスキーが正しくありません。');

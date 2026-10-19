@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import AdminLogin from '@/components/AdminLogin';
 
 import { DEFAULT_QA_ITEMS } from '@/lib/qaPresets';
+import PresenterEmailPanel from '@/components/PresenterEmailPanel';
 
 interface Participant {
   id: string;
@@ -74,7 +75,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   const [votes, setVotes] = useState<AdminVote[]>([]);
   const [posters, setPosters] = useState<Poster[]>([]);
   const [qaItems, setQaItems] = useState<QAAdminItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr' | 'qa'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'participants' | 'posters' | 'qr' | 'qa' | 'email'>('stats');
   const [qrLayout, setQrLayout] = useState<'1-portrait' | '2-landscape' | '4-portrait' | '6-portrait'>('1-portrait');
   const [selectedPosterIds, setSelectedPosterIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -1353,6 +1354,12 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
               >
                 ❓ Q&A管理 ({qaItems.length})
               </button>
+              <button
+                onClick={() => setActiveTab('email')}
+                className={`py-2.5 px-4 font-bold text-sm transition-all border-b-2 outline-none ${activeTab === 'email' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                📧 発表者メール
+              </button>
             </div>
           </header>
 
@@ -2333,6 +2340,16 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'email' && event && (
+                <PresenterEmailPanel
+                  eventId={eventId}
+                  eventName={event.name}
+                  posters={posters}
+                  interests={interests}
+                  participants={participants}
+                />
               )}
             </>
           )}
