@@ -73,7 +73,7 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
     lines.push(`あなたのポスターに寄せられたフィードバックをお届けします。\n`);
   */
   lines.push(`${eventName} へのご参加ありがとうございました。`);
-  lines.push(`あなたのポスターに寄せられたフィードバックをお届けします。\n`);
+  lines.push(`あなたのポスター発表に寄せられたフィードバックをお届けします。\n`);
 
   if (customMessage.trim()) {
     lines.push(customMessage.trim());
@@ -129,10 +129,11 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
   }
 
   // 発表者専用リンク
-  lines.push('■ 詳しくはこちら（ログイン不要の発表者専用ページ、CSVダウンロードも可能です。）');
+  lines.push('■ 詳しくはこちら（ログイン不要の発表者専用ページ、CSVでのダウンロードも可能です。）');
   if (presenterUrl) {
     lines.push(presenterUrl);
     lines.push('※ このリンクはあなた専用です。他の方と共有しないでください。\n');
+    lines.push('※ このリンクはアプリ内のイベント公開中は有効です。\n');
   } else {
     lines.push('（専用リンクを準備中です）\n');
   }
