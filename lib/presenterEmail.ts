@@ -73,7 +73,7 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
     lines.push(`あなたのポスターに寄せられたフィードバックをお届けします。\n`);
   */
   lines.push(`${eventName} へのご参加ありがとうございました。`);
-  lines.push(`あなたのポスター発表に寄せられたフィードバックをお届けします。\n`);
+  lines.push(`この度のご発表に寄せられたフィードバックをお届けします。\n`);
 
   if (customMessage.trim()) {
     lines.push(customMessage.trim());
