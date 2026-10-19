@@ -68,7 +68,11 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
   const lines: string[] = [];
 
   lines.push(`${presenterName} 様\n`);
-  lines.push(`${eventName} のポスター発表へのご参加ありがとうございました。`);
+  /*
+    lines.push(`${eventName} へのご参加ありがとうございました。`);
+    lines.push(`あなたのポスターに寄せられたフィードバックをお届けします。\n`);
+  */
+  lines.push(`${eventName} へのご参加ありがとうございました。`);
   lines.push(`あなたのポスターに寄せられたフィードバックをお届けします。\n`);
 
   if (customMessage.trim()) {
@@ -125,7 +129,7 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
   }
 
   // 発表者専用リンク
-  lines.push('■ 詳しくはこちら（ログイン不要の発表者専用ページ）');
+  lines.push('■ 詳しくはこちら（ログイン不要の発表者専用ページ、CSVダウンロードも可能です。）');
   if (presenterUrl) {
     lines.push(presenterUrl);
     lines.push('※ このリンクはあなた専用です。他の方と共有しないでください。\n');
