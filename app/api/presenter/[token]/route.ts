@@ -33,12 +33,19 @@ export async function GET(
     // 2. イベント情報を取得し、公開状態を判定
     const { data: event, error: eventError } = await supabaseAdmin
       .from('events')
-      .select('id, name, is_active, event_status, presenter_email_share_rule')
+      .select('*')
       .eq('id', eventId)
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json({ error: 'イベント情報が見つかりません' }, { status: 404 });
+      console.error('Error fetching event in presenter token API:', eventError, 'eventId:', eventId);
+      return NextResponse.json(
+        {
+          error: `イベント情報が見つかりません (${eventId})`,
+          details: eventError?.message || 'イベントデータが存在しません',
+        },
+        { status: 404 }
+      );
     }
 
     const currentStatus = event.event_status || (event.is_active !== false ? 'active' : 'private');
@@ -73,7 +80,14 @@ export async function GET(
       .single();
 
     if (posterError || !poster) {
-      return NextResponse.json({ error: 'ポスター情報が見つかりません' }, { status: 404 });
+      console.error('Error fetching poster in presenter token API:', posterError, 'eventId:', eventId, 'posterId:', posterId);
+      return NextResponse.json(
+        {
+          error: `ポスター情報が見つかりません (No.${posterId})`,
+          details: posterError?.message || 'ポスターデータが存在しません',
+        },
+        { status: 404 }
+      );
     }
 
     // 4. フィードバック一覧を取得

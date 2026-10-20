@@ -44,7 +44,10 @@ function PresenterTokenDashboardContent({ token }: { token: string }) {
 
         if (!res.ok) {
           setStatusCode(res.status);
-          setErrorMsg(result.error || 'アクセスエラーが発生しました');
+          const msg = result.details
+            ? `${result.error}\n（詳細: ${result.details}）`
+            : (result.error || 'アクセスエラーが発生しました');
+          setErrorMsg(msg);
           setIsLoading(false);
           return;
         }
