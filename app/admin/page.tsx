@@ -9,6 +9,13 @@ interface EventInfo {
   id: string;
   name: string;
   created_at?: string;
+  is_active?: boolean;
+  event_status?: 'private' | 'active' | 'closed';
+  enable_voting?: boolean;
+  voting_status?: string;
+  max_votes?: number;
+  voting_description?: string;
+  presenter_email_share_rule?: 'always' | 'conditional';
 }
 
 export default function GlobalAdminPage() {
@@ -183,6 +190,102 @@ export default function GlobalAdminPage() {
     }
   };
 
+  const handleDownloadCSV = () => {
+    if (!events || events.length === 0) {
+      alert('ダウンロードするイベントデータがありません。');
+      return;
+    }
+
+    const headers = [
+      'イベントID',
+      'イベント名',
+      '公開ステータス',
+      '投票機能',
+      '投票ステータス',
+      '最大投票数',
+      '発表者メール開示条件',
+      '投票基準・説明文',
+      '作成日時',
+      'イベントURL'
+    ];
+
+    const escapeField = (field: any) => {
+      const text = field === null || field === undefined ? '' : String(field);
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+    const rows = events.map((ev) => {
+      // 公開ステータス
+      let statusLabel = '公開（受付中）';
+      if (ev.event_status === 'private') {
+        statusLabel = '非公開';
+      } else if (ev.event_status === 'closed') {
+        statusLabel = '公開（受付終了）';
+      } else if (ev.event_status === 'active') {
+        statusLabel = '公開（受付中）';
+      } else if (ev.is_active === false) {
+        statusLabel = '非公開';
+      }
+
+      // 投票機能
+      const enableVotingLabel = ev.enable_voting ? '利用する' : '利用しない';
+
+      // 投票ステータス
+      let votingStatusLabel = '-';
+      if (ev.voting_status === 'not_started') votingStatusLabel = '開始前';
+      else if (ev.voting_status === 'active') votingStatusLabel = '受付中';
+      else if (ev.voting_status === 'closed') votingStatusLabel = '投票終了';
+
+      // 発表者メール開示条件
+      const emailRuleLabel = ev.presenter_email_share_rule === 'conditional'
+        ? '参加者が連絡先を共有した場合のみ公開'
+        : '常に公開';
+
+      // 作成日時
+      const createdAtText = ev.created_at
+        ? new Date(ev.created_at).toLocaleString('ja-JP')
+        : '';
+
+      const eventUrl = `${baseUrl}/${ev.id}`;
+
+      return [
+        escapeField(ev.id),
+        escapeField(ev.name),
+        escapeField(statusLabel),
+        escapeField(enableVotingLabel),
+        escapeField(votingStatusLabel),
+        escapeField(ev.max_votes !== undefined && ev.max_votes !== null ? ev.max_votes : '-'),
+        escapeField(emailRuleLabel),
+        escapeField(ev.voting_description || ''),
+        escapeField(createdAtText),
+        escapeField(eventUrl)
+      ];
+    });
+
+    const csvContent = [
+      headers.map(h => `"${h}"`).join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\r\n');
+
+    // Excelの文字化け防止用BOM追加
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `events_list_${dateStr}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!isAuthenticated) {
     return <AdminLogin onLoginSuccess={() => {
       setIsAuthenticated(true);
@@ -285,13 +388,23 @@ export default function GlobalAdminPage() {
 
           {/* Events List Card */}
           <section className="md:col-span-2 glass-panel p-6 rounded-3xl border border-white/70 shadow-xl space-y-5 text-left">
-            <div className="flex justify-between items-center pb-3.5 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3.5 border-b border-slate-100">
               <h2 className="text-lg font-black text-slate-800 tracking-tight">
                 📅 登録イベント一覧
               </h2>
-              <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md">
-                {events.length}件登録
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadCSV}
+                  disabled={events.length === 0}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-3.5 rounded-xl text-xs transition-all duration-200 active:scale-[0.97] shadow-sm flex items-center gap-1.5"
+                  title="全イベントのステータス・設定属性を一括CSVダウンロードします"
+                >
+                  <span>📥</span> 一括CSVダウンロード
+                </button>
+                <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2.5 py-1.5 rounded-xl">
+                  {events.length}件登録
+                </span>
+              </div>
             </div>
 
             {isLoading ? (
@@ -336,18 +449,49 @@ export default function GlobalAdminPage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-baseline gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-extrabold text-slate-800 text-base truncate">
                             {event.name}
                           </h3>
                           <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100/50">
                             {event.id}
                           </span>
+                          {(() => {
+                            const isPriv = event.event_status === 'private' || (event.event_status === undefined && event.is_active === false);
+                            const isClosed = event.event_status === 'closed';
+                            if (isPriv) {
+                              return (
+                                <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 px-2 py-0.5 rounded-full">
+                                  🔒 非公開
+                                </span>
+                              );
+                            } else if (isClosed) {
+                              return (
+                                <span className="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
+                                  🛑 受付終了
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                                  🟢 公開中
+                                </span>
+                              );
+                            }
+                          })()}
+                          {event.enable_voting && (
+                            <span className="text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/60 px-2 py-0.5 rounded-full">
+                              🗳️ 投票ON
+                            </span>
+                          )}
                         </div>
                       )}
                       
-                      <div className="text-[10px] text-slate-400 font-medium flex gap-3">
+                      <div className="text-[10px] text-slate-400 font-medium flex flex-wrap gap-x-3 gap-y-1">
                         <span>URL: <code className="bg-slate-50 px-1 py-0.5 rounded text-blue-600">/{event.id}</code></span>
+                        {event.created_at && (
+                          <span>作成: {new Date(event.created_at).toLocaleDateString('ja-JP')}</span>
+                        )}
                       </div>
                     </div>
 

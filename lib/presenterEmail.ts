@@ -62,9 +62,9 @@ export function generatePresenterEmail(data: PresenterEmailData): GeneratedEmail
   const presenterUrl = token ? `${cleanBaseUrl}/presenter/${token}` : '';
 
   // 件名
-  const subject = `【${eventName}】ポスター No.${posterId} へのフィードバックが届きました（${totalFeedbacks}件）`;
-
+  const subject = `【${eventName}】ポスター No.${posterId} へのフィードバックをお送りします（${totalFeedbacks}件）`;
   // 本文組み立て
+
   const lines: string[] = [];
 
   lines.push(`${presenterName} 様\n`);
