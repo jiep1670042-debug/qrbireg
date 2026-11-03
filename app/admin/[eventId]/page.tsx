@@ -761,6 +761,59 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
     e.target.value = '';
   };
 
+  // Participant List CSV Download Handler
+  const handleDownloadParticipantsCSV = () => {
+    if (!participants || participants.length === 0) {
+      alert('ダウンロードする参加者データがありません。');
+      return;
+    }
+
+    const headers = [
+      '参加者ID',
+      '氏名',
+      '会社名',
+      '所属',
+      'メールアドレス'
+    ];
+
+    const escapeField = (field: any) => {
+      const text = field === null || field === undefined ? '' : String(field);
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const rows = participants.map((p) => {
+      const fullName = `${p.last_name || ''} ${p.first_name || ''}`.trim();
+      return [
+        escapeField(p.id),
+        escapeField(fullName),
+        escapeField(p.company || ''),
+        escapeField(p.affiliation || ''),
+        escapeField(p.email || '')
+      ];
+    });
+
+    const csvContent = [
+      headers.map(h => `"${h}"`).join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\r\n');
+
+    // Excelの文字化け防止用BOM追加
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `participants_${eventId}_${dateStr}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Individual Insert Handlers
   const handleAddParticipant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1680,7 +1733,22 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
 
                   {/* Right List Panel */}
                   <div className="md:col-span-2 glass-panel p-6 rounded-3xl border border-white/70 shadow-lg space-y-4">
-                    <h3 className="font-black text-slate-800 text-base text-left">👥 登録されている参加者名簿</h3>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-2 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-black text-slate-800 text-base text-left">👥 登録されている参加者名簿</h3>
+                        <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">
+                          {participants.length}名
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleDownloadParticipantsCSV}
+                        disabled={participants.length === 0}
+                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all duration-200 active:scale-[0.97] shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
+                        title="参加者名簿（ID、氏名、会社名、所属、メールアドレス）を一括CSVダウンロードします"
+                      >
+                        <span>📥</span> 名簿CSVダウンロード
+                      </button>
+                    </div>
                     {participants.length === 0 ? (
                       <p className="py-12 text-slate-400 text-xs font-semibold text-center">登録されている参加者がいません。</p>
                     ) : (
