@@ -17,6 +17,7 @@ function RegisterContent() {
   const part2Ref = useRef<HTMLInputElement>(null);
   const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed' | 'ended'>('active');
   const [isEventChecked, setIsEventChecked] = useState(false);
+  const [eventNotFound, setEventNotFound] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -29,9 +30,11 @@ function RegisterContent() {
           .from('events')
           .select('is_active, event_status')
           .eq('id', eventId)
-          .single();
+          .maybeSingle();
 
-        if (!error && data) {
+        if (error || !data) {
+          if (eventId !== 'default') setEventNotFound(true);
+        } else {
           if (data.event_status) {
             setEventStatus(data.event_status as any);
           } else {
@@ -40,6 +43,7 @@ function RegisterContent() {
         }
       } catch (err) {
         console.error('Failed to fetch event status on register page:', err);
+        if (eventId !== 'default') setEventNotFound(true);
       } finally {
         setIsEventChecked(true);
       }
@@ -121,6 +125,33 @@ function RegisterContent() {
     e.preventDefault();
     handleRegister(`${idPart1}-${idPart2}`);
   };
+
+  if (isEventChecked && eventNotFound) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 space-y-7 border border-rose-200 bg-rose-50/40">
+          <div className="w-20 h-20 bg-rose-100 text-rose-600 border border-rose-200 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            ⚠️
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-rose-950">指定されたイベントは存在しません</h1>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              指定されたURLのイベント（ID: <span className="font-mono font-bold text-rose-950">{eventId}</span>）は存在しないか、終了した可能性があります。<br />
+              URLが正しいか、イベント主催者にご確認ください。
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push('/')}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 text-sm border border-slate-200"
+          >
+            トップページへ戻る
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (isEventChecked && eventStatus !== 'active') {
     return (

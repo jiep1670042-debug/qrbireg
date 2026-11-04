@@ -109,6 +109,8 @@ function HomeContent() {
   };
 
   const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed' | 'ended'>('active');
+  const [isEventChecked, setIsEventChecked] = useState(false);
+  const [eventNotFound, setEventNotFound] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -117,13 +119,16 @@ function HomeContent() {
           .from('events')
           .select('name, is_active, event_status')
           .eq('id', eventId)
-          .single();
+          .maybeSingle();
         if (error) {
+          console.error('Failed to fetch event:', error);
           setDbError(`${error.message} (Code: ${error.code})`);
+          if (eventId !== 'default') setEventNotFound(true);
           setEventName(null);
         } else if (data) {
           setEventName(data.name);
           setDbError(null);
+          setEventNotFound(false);
           if (data.event_status) {
             setEventStatus(data.event_status as any);
           } else {
@@ -131,12 +136,19 @@ function HomeContent() {
           }
         } else {
           setEventName(null);
-          setDbError('No data returned from events table');
+          if (eventId !== 'default') {
+            setEventNotFound(true);
+          } else {
+            setEventNotFound(false);
+          }
         }
       } catch (err: any) {
         console.error('Failed to fetch event:', err);
         setDbError(err.message || 'Unknown fetch error');
         setEventName(null);
+        if (eventId !== 'default') setEventNotFound(true);
+      } finally {
+        setIsEventChecked(true);
       }
     };
     fetchEvent();
@@ -159,7 +171,7 @@ function HomeContent() {
           .select('*')
           .eq('event_id', eventId)
           .eq('id', savedUserId)
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           setParticipant(data);
@@ -221,6 +233,35 @@ function HomeContent() {
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             ポスター発表<br />興味・関心フィードバック
           </h1>
+
+          {!isEventChecked ? (
+            <div className="py-8 text-slate-400 text-sm font-semibold flex items-center justify-center gap-2">
+              <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
+              イベント情報を確認中...
+            </div>
+          ) : eventNotFound ? (
+            <div className="bg-rose-50/90 border border-rose-200/80 rounded-2xl p-6 text-center space-y-3 shadow-inner mt-3 animate-fade-in">
+              <div className="w-14 h-14 bg-rose-100/90 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-sm border border-rose-200/50">
+                ⚠️
+              </div>
+              <div className="space-y-1.5">
+                <h2 className="text-lg font-black text-rose-950">指定されたイベントは存在しません</h2>
+                <p className="text-xs text-rose-800/90 font-medium leading-relaxed">
+                  指定されたURLのイベント「<span className="font-mono font-bold text-rose-950">{eventId}</span>」は存在しないか、終了した可能性があります。<br />
+                  URLが正しいか、イベント主催者にご確認ください。
+                </p>
+              </div>
+              <div className="pt-2">
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 active:scale-[0.97]"
+                >
+                  <span>🏠</span> トップページへ
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
           {eventName ? (
             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-50/80 text-blue-700 border border-blue-100/50 rounded-full text-xs font-bold shadow-sm mx-auto mt-1">
               🏆 {eventName}
@@ -361,10 +402,12 @@ function HomeContent() {
               )}
             </div>
           )}
+            </>
+          )}
         </div>
 
         {/* Private state disables lower actions */}
-        {eventStatus === 'private' || eventStatus === 'ended' ? null : isLoading ? (
+        {!isEventChecked || eventNotFound || eventStatus === 'private' || eventStatus === 'ended' ? null : isLoading ? (
           <div className="py-8 text-slate-400 text-sm font-semibold flex items-center justify-center gap-2">
             <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
             読み込み中...

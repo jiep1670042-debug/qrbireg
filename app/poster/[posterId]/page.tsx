@@ -15,6 +15,7 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [posterTitle, setPosterTitle] = useState<string | null>(null);
   const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed' | 'ended'>('active');
+  const [eventNotFound, setEventNotFound] = useState(false);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem(`userId_${eventId}`);
@@ -27,9 +28,12 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
           .from('events')
           .select('is_active, event_status')
           .eq('id', eventId)
-          .single();
+          .maybeSingle();
 
-        if (!eventError && eventData) {
+        if (eventError || !eventData) {
+          if (eventId !== 'default') setEventNotFound(true);
+        } else {
+          setEventNotFound(false);
           if (eventData.event_status) {
             setEventStatus(eventData.event_status as any);
           } else {
@@ -43,13 +47,14 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
           .select('title')
           .eq('event_id', eventId)
           .eq('id', parseInt(params.posterId, 10))
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           setPosterTitle(data.title);
         }
       } catch (err) {
         console.error('Failed to load poster info:', err);
+        if (eventId !== 'default') setEventNotFound(true);
       } finally {
         setIsLoaded(true);
       }
@@ -67,6 +72,33 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <p className="text-slate-500 font-bold tracking-wider text-sm animate-pulse">読み込み中...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (eventNotFound) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl shadow-rose-900/5 rounded-3xl p-8 space-y-7 border border-rose-100 bg-rose-50/30">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 border border-rose-100 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            ⚠️
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-rose-950">指定されたイベントは存在しません</h1>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              指定されたURLのイベント（ID: <span className="font-mono font-bold text-rose-950">{eventId}</span>）は存在しないか、終了した可能性があります。<br />
+              URLが正しいか、イベント主催者にご確認ください。
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push('/')}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 text-md border border-slate-200"
+          >
+            トップページへ戻る
+          </button>
         </div>
       </main>
     );
