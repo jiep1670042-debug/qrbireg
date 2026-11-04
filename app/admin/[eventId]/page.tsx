@@ -28,7 +28,7 @@ interface EventInfo {
   id: string;
   name: string;
   is_active: boolean;
-  event_status?: 'private' | 'active' | 'closed';
+  event_status?: 'private' | 'active' | 'closed' | 'ended';
   max_votes?: number;
   voting_status?: string;
   enable_voting?: boolean;
@@ -498,7 +498,7 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
   };
 
   // Event 3-state status update (private / active / closed)
-  const handleUpdateEventStatus = async (newStatus: 'private' | 'active' | 'closed') => {
+  const handleUpdateEventStatus = async (newStatus: 'private' | 'active' | 'closed' | 'ended') => {
     if (!event) return;
     try {
       const isAct = newStatus === 'active';
@@ -512,7 +512,8 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
       const labelMap = {
         private: '🔒 非公開',
         active: '🟢 公開（受付中）',
-        closed: '🛑 公開（受付終了）'
+        closed: '🛑 公開（受付終了）',
+        ended: '🏁 終了'
       };
       alert(`イベントステータスを「${labelMap[newStatus]}」に変更しました。`);
     } catch (err: any) {
@@ -1343,12 +1344,13 @@ export default function EventAdminPage({ params }: { params: { eventId: string }
                     <span className="text-[10px] font-extrabold text-slate-500">ステータス:</span>
                     <select
                       value={event?.event_status || (event?.is_active ? 'active' : 'private')}
-                      onChange={(e) => handleUpdateEventStatus(e.target.value as 'private' | 'active' | 'closed')}
+                      onChange={(e) => handleUpdateEventStatus(e.target.value as 'private' | 'active' | 'closed' | 'ended')}
                       className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-black text-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-blue-100 shadow-sm"
                     >
                       <option value="private">🔒 非公開</option>
                       <option value="active">🟢 公開（受付中）</option>
                       <option value="closed">🛑 公開（受付終了）</option>
+                      <option value="ended">🏁 終了</option>
                     </select>
                   </div>
 

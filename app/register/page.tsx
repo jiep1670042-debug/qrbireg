@@ -15,7 +15,7 @@ function RegisterContent() {
   const [idPart1, setIdPart1] = useState('');
   const [idPart2, setIdPart2] = useState('');
   const part2Ref = useRef<HTMLInputElement>(null);
-  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed' | 'ended'>('active');
   const [isEventChecked, setIsEventChecked] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -127,17 +127,23 @@ function RegisterContent() {
       <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
         <div className="max-w-md w-full glass-panel shadow-2xl rounded-3xl p-8 space-y-7 border border-slate-200">
           <div className="w-20 h-20 bg-slate-100 text-slate-500 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
-            {eventStatus === 'private' ? '🔒' : '🛑'}
+            {eventStatus === 'private' ? '🔒' : eventStatus === 'ended' ? '🏁' : '🛑'}
           </div>
 
           <div className="space-y-2">
             <h1 className="text-2xl font-black text-slate-800">
-              {eventStatus === 'private' ? 'このイベントは非公開です' : '参加者登録の受付は終了しました'}
+              {eventStatus === 'private'
+                ? 'このイベントは非公開です'
+                : eventStatus === 'ended'
+                ? 'イベントは終了しました'
+                : '受付は終了しました'}
             </h1>
             <p className="text-slate-500 text-sm leading-relaxed">
               {eventStatus === 'private'
                 ? '現在、このイベントは準備中または非公開に設定されているため、参加者登録は行えません。'
-                : '本イベントの参加者登録の受付期間は終了いたしました。'}
+                : eventStatus === 'ended'
+                ? '本イベントは全日程を終了いたしました。参加者登録およびフィードバックの受付は終了しております。'
+                : '本イベントの参加者登録の受付は終了いたしました。'}
             </p>
           </div>
 

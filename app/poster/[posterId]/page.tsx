@@ -14,7 +14,7 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [posterTitle, setPosterTitle] = useState<string | null>(null);
-  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed' | 'ended'>('active');
 
   useEffect(() => {
     const storedUserId = localStorage.getItem(`userId_${eventId}`);
@@ -93,6 +93,34 @@ function PosterPageContent({ params }: { params: { posterId: string } }) {
           >
             トップに戻る
           </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (eventStatus === 'ended') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full glass-panel shadow-2xl shadow-blue-900/5 rounded-3xl p-8 space-y-7 border border-white/70">
+          <div className="w-20 h-20 bg-slate-100 text-slate-600 border border-slate-200/80 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner text-3xl">
+            🏁
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-800">イベントは終了しました</h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              本イベントは全日程を終了いたしました。ポスターフィードバックの登録および閲覧の受付は終了しております。
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <button
+              onClick={() => router.push(`/${eventId}`)}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-6 rounded-2xl transition-all duration-300 active:scale-[0.97] text-sm border border-slate-200"
+            >
+              トップに戻る
+            </button>
+          </div>
         </div>
       </main>
     );

@@ -10,7 +10,7 @@ interface EventInfo {
   name: string;
   created_at?: string;
   is_active?: boolean;
-  event_status?: 'private' | 'active' | 'closed';
+  event_status?: 'private' | 'active' | 'closed' | 'ended';
   enable_voting?: boolean;
   voting_status?: string;
   max_votes?: number;
@@ -182,7 +182,20 @@ export default function GlobalAdminPage() {
         .eq('event_id', eventId);
       if (partError) throw partError;
 
-      alert(`イベント「${eventName}」の登録データ（参加者・ポスター・フィードバック）を一括クリアしました。`);
+      // 4. Delete votes
+      await supabase.from('votes').delete().eq('event_id', eventId);
+
+      // 5. Delete poster_access_tokens
+      await supabase.from('poster_access_tokens').delete().eq('event_id', eventId);
+
+      // 6. Update event status to 'ended' (終了)
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ event_status: 'ended', is_active: false })
+        .eq('id', eventId);
+      if (updateError) throw updateError;
+
+      alert(`イベント「${eventName}」の登録データをクリアし、ステータスを「終了」に更新しました。`);
       fetchEvents();
     } catch (err: any) {
       console.error('Failed to clear event data:', err);
@@ -223,6 +236,8 @@ export default function GlobalAdminPage() {
         statusLabel = '非公開';
       } else if (ev.event_status === 'closed') {
         statusLabel = '公開（受付終了）';
+      } else if (ev.event_status === 'ended') {
+        statusLabel = '終了';
       } else if (ev.event_status === 'active') {
         statusLabel = '公開（受付中）';
       } else if (ev.is_active === false) {
@@ -459,7 +474,14 @@ export default function GlobalAdminPage() {
                           {(() => {
                             const isPriv = event.event_status === 'private' || (event.event_status === undefined && event.is_active === false);
                             const isClosed = event.event_status === 'closed';
-                            if (isPriv) {
+                            const isEnded = event.event_status === 'ended';
+                            if (isEnded) {
+                              return (
+                                <span className="text-[10px] font-bold bg-slate-200 text-slate-800 border border-slate-300 px-2 py-0.5 rounded-full">
+                                  🏁 終了
+                                </span>
+                              );
+                            } else if (isPriv) {
                               return (
                                 <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 px-2 py-0.5 rounded-full">
                                   🔒 非公開

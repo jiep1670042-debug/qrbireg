@@ -108,7 +108,7 @@ function HomeContent() {
     }
   };
 
-  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed'>('active');
+  const [eventStatus, setEventStatus] = useState<'private' | 'active' | 'closed' | 'ended'>('active');
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -272,6 +272,21 @@ function HomeContent() {
             </div>
           )}
 
+          {/* Ended Event State Notice */}
+          {eventStatus === 'ended' && (
+            <div className="bg-slate-100/90 border border-slate-200/80 rounded-2xl p-5 text-center space-y-2 shadow-inner mt-3">
+              <div className="text-[10px] font-black tracking-widest text-slate-500 uppercase bg-slate-200/70 px-3 py-0.5 rounded-full inline-block">
+                Ended
+              </div>
+              <h2 className="text-base font-extrabold text-slate-800">🛑 イベントは終了しました</h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                本イベントは全日程を終了いたしました。<br />
+                ポスターフィードバックの登録および閲覧の受付は終了しております。<br />
+                ご参加・ご利用いただき誠にありがとうございました。
+              </p>
+            </div>
+          )}
+
           {/* Active Event Scan & Poster Entry Card */}
           {eventStatus === 'active' && (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-2xl p-4 text-center mt-3 shadow-sm space-y-4">
@@ -349,7 +364,7 @@ function HomeContent() {
         </div>
 
         {/* Private state disables lower actions */}
-        {eventStatus === 'private' ? null : isLoading ? (
+        {eventStatus === 'private' || eventStatus === 'ended' ? null : isLoading ? (
           <div className="py-8 text-slate-400 text-sm font-semibold flex items-center justify-center gap-2">
             <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
             読み込み中...
